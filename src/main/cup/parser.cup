@@ -6,15 +6,42 @@ class Parser;
 
 
 // Terminals
-terminal ASSIG;
-terminal PLUS;
-terminal SUB;
-terminal MULT;
-terminal DIV;
-terminal OPEN_BRACKET;
-terminal CLOSE_BRACKET;
-terminal INTEGER_CONSTANT;
-terminal IDENTIFIER;
+terminal ID;
+terminal CTE_ENTERA;
+terminal CTE_FLOTANTE;
+terminal CTE_CADENA;
+
+terminal OP_SUMA;
+terminal OP_RESTA;
+terminal OP_MULT;
+terminal OP_DIV;
+terminal OP_ASIG;
+terminal OP_TIPO;
+terminal COMP_MEN;
+terminal COMP_MAY;
+
+terminal COMA;
+terminal PAR_ABRIR;
+terminal PAR_CERRAR;
+terminal LLAVE_ABRIR;
+terminal LLAVE_CERRAR;
+
+terminal IF;
+terminal ELSE;
+terminal WHILE;
+terminal AND;
+terminal OR;
+terminal NOT;
+terminal WRITE;
+terminal READ;
+terminal INIT;
+
+terminal DT_FLOAT;
+terminal DT_INT;
+terminal DT_STRING;
+
+terminal SLICE_AND_CONCAT;
+terminal NEGATIVE_CALCULATION;
 
 // Non Terminals
 non terminal sentence;

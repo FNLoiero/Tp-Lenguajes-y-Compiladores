@@ -33,15 +33,31 @@ LineTerminator = \r|\n|\r\n
 InputCharacter = [^\r\n]
 Identation =  [ \t\f]
 
-Plus = "+"
-Mult = "*"
-Sub = "-"
-Div = "/"
-Assig = "="
-OpenBracket = "("
-CloseBracket = ")"
-Letter = [a-zA-Z]
-Digit = [0-9]
+OP_SUMA = "+"
+OP_MULT = "*"
+OP_RESTA = "-"
+OP_DIV = "/"
+OP_ASIG = ":="
+OP_TIPO = ":"
+COMP_MEN = "<"
+COMP_MAY = ">"
+COMA = ","
+
+PAR_ABRIR = "("
+PAR_CERRAR = ")"
+LLAVE_ABRIR = "{"
+LLAVE_CERRAR = "}"
+COM_INI = "#+"
+COM_FIN = "+#"
+
+DIGITO = [0-9]
+LETRA = [a-zA-Z]
+
+COMENTARIO = {COM_INI}.*{COM_FIN}
+ID = {LETRA}({LETRA}|{DIGITO})*
+CTE_CADENA = \"([^\"\\\\]|\\\\.)*\"
+CTE_ENTERA = {DIGITO}+
+CTE_FLOTANTE = "-"?({DIGITO}+\.{DIGITO}*|\.{DIGITO}+)
 
 WhiteSpace = {LineTerminator} | {Identation}
 Identifier = {Letter} ({Letter}|{Digit})*
