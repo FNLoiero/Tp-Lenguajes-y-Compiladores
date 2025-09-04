@@ -102,6 +102,9 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   {LLAVE_ABRIR}     { return symbol(ParserSym.LLAVE_ABRIR); }
   {LLAVE_CERRAR}    { return symbol(ParserSym.LLAVE_CERRAR); } 
   {COMA}            { return symbol(ParserSym.COMA); }
+  {COMP_MEN}        { return symbol(ParserSym.COMP_MEN); }
+  {COMP_MAY}        { return symbol(ParserSym.COMP_MAY); }
+  
 
   /* whitespace */
   {ESPACIO_BLANCO}                   { /* ignore */ }
