@@ -88,8 +88,8 @@ IntegerConstant = {Digit}+
   {ID}                             { return symbol(ParserSym.ID, yytext()); }
   /* Constants */
   {CTE_ENTERA}                        { return symbol(ParserSym.CTE_ENTERA, yytext()); }
-  {CTE_FLOTANTE}                      { return symbol(ParserSym.CTE_ENTERA, yytext()); }
-  {CTE_CADENA}                        { return symbol(ParserSym.CTE_ENTERA, yytext()); }
+  {CTE_FLOTANTE}                      { return symbol(ParserSym.CTE_FLOTANTE, yytext()); }
+  {CTE_CADENA}                        { return symbol(ParserSym.CTE_CADENA, yytext()); }
   
 
   /* operators */
