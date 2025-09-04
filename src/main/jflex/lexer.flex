@@ -58,15 +58,10 @@ ID = {LETRA}({LETRA}|{DIGITO})*
 CTE_CADENA = \"([^\"\\\\]|\\\\.)*\"
 CTE_ENTERA = {DIGITO}+
 CTE_FLOTANTE = "-"?({DIGITO}+\.{DIGITO}*|\.{DIGITO}+)
-
 ESPACIO_BLANCO = {LineTerminator} | {Identation}
-ID = {Letter} ({Letter}|{Digit})*
-IntegerConstant = {Digit}+
 
 %%
 
-
-/* keywords */
 
 <YYINITIAL> {
   /* keywords */
@@ -79,10 +74,14 @@ IntegerConstant = {Digit}+
   "AND"             { return symbol(ParserSym.AND); }
   "OR"              { return symbol(ParserSym.OR); }
   "NOT"             { return symbol(ParserSym.NOT); }
-
   "Float" 	        { return symbol(ParserSym.DT_FLOAT); }
   "Int" 		        { return symbol(ParserSym.DT_INT); }
   "String" 	        { return symbol(ParserSym.DT_STRING); }
+
+  /* Temas especiales */
+  "equalExpressions"  { return symbol(ParserSym.EQUALEXPRESSIONS); }
+  "isZero"            { return symbol(ParserSym.ISZERO); }
+
 
   /* identifiers */
   {ID}                             { return symbol(ParserSym.ID, yytext()); }
