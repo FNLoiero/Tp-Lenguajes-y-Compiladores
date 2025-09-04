@@ -16,15 +16,15 @@ terminal OP_RESTA;
 terminal OP_MULT;
 terminal OP_DIV;
 terminal OP_ASIG;
-terminal OP_TIPO;
 terminal COMP_MEN;
 terminal COMP_MAY;
 
-terminal COMA;
+terminal OP_COMA;
 terminal PAR_ABRIR;
 terminal PAR_CERRAR;
 terminal LLAVE_ABRIR;
 terminal LLAVE_CERRAR;
+terminal OP_PUNTOS;
 
 terminal IF;
 terminal ELSE;
@@ -40,18 +40,99 @@ terminal DT_FLOAT;
 terminal DT_INT;
 terminal DT_STRING;
 
-terminal SLICE_AND_CONCAT;
-terminal NEGATIVE_CALCULATION;
+// Terminales especiales
+terminal EQUAL_EXPRESSIONS;
+terminal IS_ZERO;
 
 // Non Terminals
-non terminal programa;
-non terminal asignacion;
-non terminal expression;
-non terminal term;
-non terminal factor;
+
+    //Comunes
+    non terminal programa;
+    non terminal instruccion;
+    non terminal serie_de_instrucciones;
+    non terminal instruccion_normal;
+    non terminal asignacion;
+    non terminal constante;
+    non terminal tipo_dato;
+
+    //INIT
+    non terminal init; 
+    non terminal declaraciones;    
+    non terminal listado_variables;
+
+    //Aritmeticos
+    non terminal instruccion_aritmetica;
+    non terminal operacion;
+    non terminal termino;
+    non terminal factor;     
+
+    //Condicionales
+    non terminal instruccion_condicional;
+    non terminal if;
+    non terminal while;
+    non terminal condicion;
+    non terminal operacion_logica;
+
+    //Especiales
+    non terminal instruccion_especial;
+    non terminal OPERATION_EQUAL_EXPRESSIONS;
+    non terminal OPERATION_IS_ZERO;
+
+    //Entrada y salida
+    non terminal instruccion_entrada_salida;
+    non terminal read;
+    non terminal write;
+    non terminal parametro_write;
+//
 
 // Start Symbol Definition
+
 start with programa;
 
-programa ::= asignacion {: System.out.println("End"); :};
-asignacion ::= ID OP_ASIG ID {: System.out.println("asignación llegada"); :};
+programa ::= serie_de_instrucciones {: System.out.println("FIN"); :};
+serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
+
+//Tipos de instrucciones
+
+    instruccion ::=  instruccion_normal | instruccion_aritmetica | instruccion_condicional 
+                    | instruccion_entrada_salida | instruccion_especial;
+    instruccion_normal ::= asignacion | init;
+    instruccion_aritmetica ::=  operacion;
+    instruccion_condicional ::= if | while;
+    instruccion_entrada_salida ::= read | write;
+    instruccion_especial ::= OPERATION_EQUAL_EXPRESSIONS | OPERATION_IS_ZERO;
+
+//Operaciones detalladas
+
+    //----------- Instrucciones normales
+
+    asignacion ::= ID OP_ASIG ID {: System.out.println("Se asigno el ID correctamente");:}
+                 | ID OP_ASIG constante {: System.out.println("Se asigno el ID correctamente");:};
+
+    constante ::= CTE_ENTERA {: System.out.println("Entero usado");:}
+                | CTE_FLOTANTE {: System.out.println("Flotante usado");:}
+                | CTE_CADENA {: System.out.println("Cadena usada");:};
+
+    tipo_dato ::= DT_ENTERA {: System.out.println("Tipo Entero usado");:}
+                | DT_FLOTANTE {: System.out.println("Tipo Flotante usado");:}
+                | DT_CADENA {: System.out.println("Tipo Cadena usada");:};
+
+    init ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:System.out.println("Bloque INIT");:};
+
+    declaraciones ::=  listado_variables OP_PUNTOS tipo_dato | declaraciones listado_variables OP_PUNTOS tipo_dato;
+
+    listado_variables ::= ID {: System.out.println("Se hace una inicialización");:} 
+                        | listado_variables OP_COMA ID {: System.out.println("Se hace una inicialización");:};
+
+    //----------- Instrucciones aritmeticas
+    
+
+    //----------- Instrucciones condicional
+
+
+    //----------- Instrucciones entrada y salida
+    read ::= READ PAR_ABRIR ID PAR_CERRAR {: System.out.println("Se hizo una lectura");:};
+    write ::= WRITE PAR_ABRIR parametro_write PAR_CERRAR {: System.out.println("Se hizo una escritura");:};
+    parametro_write ::= ID | CTE_CADENA
+
+    //----------- Instrucciones especiales

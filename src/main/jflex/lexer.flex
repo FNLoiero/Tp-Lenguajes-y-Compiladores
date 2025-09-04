@@ -41,7 +41,7 @@ OP_ASIG = ":="
 OP_TIPO = ":"
 COMP_MEN = "<"
 COMP_MAY = ">"
-COMA = ","
+OP_COMA = ","
 
 PAR_ABRIR = "("
 PAR_CERRAR = ")"
@@ -79,8 +79,8 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   "String" 	        { return symbol(ParserSym.DT_STRING); }
 
   /* Temas especiales */
-  "equalExpressions"  { return symbol(ParserSym.EQUALEXPRESSIONS); }
-  "isZero"            { return symbol(ParserSym.ISZERO); }
+  "equalExpressions"  { return symbol(ParserSym.EQUAL_EXPRESSIONS); }
+  "isZero"            { return symbol(ParserSym.IS_ZERO); }
 
 
   /* identifiers */
@@ -101,10 +101,10 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   {PAR_CERRAR}      { return symbol(ParserSym.PAR_CERRAR); }
   {LLAVE_ABRIR}     { return symbol(ParserSym.LLAVE_ABRIR); }
   {LLAVE_CERRAR}    { return symbol(ParserSym.LLAVE_CERRAR); } 
-  {COMA}            { return symbol(ParserSym.COMA); }
+  {OP_COMA}         { return symbol(ParserSym.OP_COMA); }
   {COMP_MEN}        { return symbol(ParserSym.COMP_MEN); }
   {COMP_MAY}        { return symbol(ParserSym.COMP_MAY); }
-  
+  {OP_PUNTOS}       { return symbol(ParserSym.OP_PUNTOS); }
 
   /* whitespace */
   {ESPACIO_BLANCO}                   { /* ignore */ }
