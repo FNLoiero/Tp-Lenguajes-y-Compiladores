@@ -72,6 +72,9 @@ terminal IS_ZERO;
     non terminal while;
     non terminal condicion;
     non terminal operacion_logica;
+    non terminal else_opcional;
+    non terminal expresion_logica;
+    non terminal comparador;
 
     //Especiales
     non terminal instruccion_especial;
@@ -94,10 +97,9 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
 //Tipos de instrucciones
 
-    instruccion ::=  instruccion_normal | instruccion_aritmetica | instruccion_condicional 
+    instruccion ::=  instruccion_normal | instruccion_condicional 
                     | instruccion_entrada_salida | instruccion_especial;
-    instruccion_normal ::= asignacion | init;
-    instruccion_aritmetica ::=  operacion;
+    instruccion_normal ::= asignacion | init;    
     instruccion_condicional ::= if | while;
     instruccion_entrada_salida ::= read | write;
     instruccion_especial ::= OPERATION_EQUAL_EXPRESSIONS | OPERATION_IS_ZERO;
@@ -107,8 +109,10 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
     //----------- Instrucciones normales
 
     asignacion ::= ID OP_ASIG ID {: System.out.println("Se asigno el ID correctamente");:}
-                 | ID OP_ASIG constante {: System.out.println("Se asigno el ID correctamente");:};
+                 | ID OP_ASIG constante {: System.out.println("Se asigno el ID correctamente");:}
+                 | ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:};
 
+                 
     constante ::= CTE_ENTERA {: System.out.println("Entero usado");:}
                 | CTE_FLOTANTE {: System.out.println("Flotante usado");:}
                 | CTE_CADENA {: System.out.println("Cadena usada");:};
@@ -124,15 +128,48 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
     listado_variables ::= ID {: System.out.println("Se hace una inicialización");:} 
                         | listado_variables OP_COMA ID {: System.out.println("Se hace una inicialización");:};
 
-    //----------- Instrucciones aritmeticas
-    
+    //----------- Aritmetica
+
+    operacion ::= operacion OP_SUMA termino {: System.out.println("Suma");:}
+            | operacion OP_RESTA termino {:System.out.println("Resta");:};    
+            | termino
+
+    termino ::= termino OP_MULT factor {: System.out.println("Multiplicación");:}
+            | termino OP_DIV factor{: System.out.println("División");:}
+            | factor;
+
+    factor ::= constante
+             | ID {: System.out.println("Id: " + id);:};
 
     //----------- Instrucciones condicional
+
+    if ::= IF PAR_ABRIR condicion PAR_CERRAR  {: System.out.println("IF");:}
+        LLAVE_ABRIR serie_de_instrucciones LLAVE_CERRAR
+        else_opcional;
+
+    else_opcional ::= ELSE 
+                      LLAVE_ABRIR serie_de_instrucciones LLAVE_CERRAR {: System.out.println("FIN ELSE");:}
+                      |
+                      | ELSE if {: System.out.println("ELSE IF");:};
+
+    while ::= WHILE PAR_ABRIR condicion PAR_CERRAR LLAVE_ABRIR serie_de_instrucciones LLAVE_CERRAR {: System.out.println("WHILE"); :};
+
+
+    condicion ::= expresion_logica {:System.out.println("Expresión");:}
+                | NOT expresion_logica {:System.out.println("NOT");:};
+
+
+    expresion_logica ::= operacion comparador operacion //Al usar operación permite ID y constantes pero tambien resultado de cuentas
+                    | operacion comparador operacion AND operacion comparador operacion                        
+                    | operacion comparador operacion OR operacion comparador operacion;
+
+    comparador ::= COMP_MEN {: System.out.println("Operador menor");:}
+                 | COMP_MAY {: System.out.println("Operador mayor");:};
 
 
     //----------- Instrucciones entrada y salida
     read ::= READ PAR_ABRIR ID PAR_CERRAR {: System.out.println("Se hizo una lectura");:};
     write ::= WRITE PAR_ABRIR parametro_write PAR_CERRAR {: System.out.println("Se hizo una escritura");:};
-    parametro_write ::= ID | CTE_CADENA
+    parametro_write ::= ID | CTE_CADENA;
 
     //----------- Instrucciones especiales
