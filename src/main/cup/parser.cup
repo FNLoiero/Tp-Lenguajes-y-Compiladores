@@ -43,6 +43,7 @@ terminal DT_STRING;
 // Terminales especiales
 terminal EQUAL_EXPRESSIONS;
 terminal IS_ZERO;
+terminal COMENTARIO;
 
 // Non Terminals
 
@@ -138,7 +139,7 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
             | termino OP_DIV factor{: System.out.println("División");:}
             | factor;
 
-    factor ::= constante | ID;
+    factor ::= constante | ID | PAR_ABRIR operacion PAR_CERRAR;
 
     //----------- Instrucciones condicional
 
@@ -155,10 +156,12 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
 
     condicion ::= expresion_logica {:System.out.println("Expresión");:}
-                | NOT expresion_logica {:System.out.println("NOT");:};
+                | NOT expresion_logica {:System.out.println("NOT");:}
+                | operation_is_zero {:System.out.println("Condición IsZero");:};
 
 
-    expresion_logica ::= operacion comparador operacion //Al usar operación permite ID y constantes pero tambien resultado de cuentas
+
+    expresion_logica ::= operacion comparador operacion //Al usar operacion permite ID y constantes pero tambien resultado de cuentas
                     | operacion comparador operacion AND operacion comparador operacion                        
                     | operacion comparador operacion OR operacion comparador operacion;
 

@@ -1,1 +1,129 @@
-c=d*(e-21)/4
+init {
+    a1, b1 : Float
+    variable1 : Int
+    p1, p2, p3 : String
+}
+
+#+ “ewr” es una cte string +##+ “ewr” es una cte string +#
+a := 99999.99
+a := 99.
+a := .9999
+b := "@sdADaSjfla%dfg"
+b := "asldk  fh sjf"
+c1 := 10
+c2 := 456
+c3 := 500
+c3 := -500
+c3 := -500.
+c3 := -500.001
+
+x := 27 - c1
+x := c1 + 500
+x := c1 * c3
+d := a / z
+c := d * (e - 21) / 4
+
+#+ “ewr” es una cte string +#
+write("ewr")
+write(b)
+read(base)
+
+#+ “ewr” es una cte string +#
+if (c1 > c2)
+{
+    write("c1 es mas grande que c2")
+}
+
+if (c1 > c2)
+{
+    write("c1 es mas grande que c2")
+}
+else
+{
+    write("c1 es mas chico o igual a c2")
+}
+
+#+ “ewr” es una cte string +#
+
+if (c1 > c2 AND c3 > c2)
+{
+    #+ “ewr” es una cte string +#
+    write("c1 es mas grande que c2 y c3 es mas grande que c2")
+}
+
+if (c1 > c2 OR c3 > c2)
+{
+    #+ “ewr” es una cte string +#
+    write("c1 es mas grande que c2 o c3 es mas grande que c2")
+}
+
+if (NOT c1 > c2)
+{
+    write("c1 no es mas grande que c2")
+}
+
+if (c1 > c2 AND c3 > c2)
+{
+    write("c1 es mas grande que c2 y c3 es mas grande que c2")
+}
+else
+{
+    write("c1 es mas chico o igual a c2")
+    write("o c3 es mas chico o igual a c2")
+}
+
+c1 := 1 #+ “ewr” es una cte string +#
+c2 := 3 #+ “ewr” es una cte string +#
+
+#+ “ewr” es una cte string +#
+
+if(c1 < c2){
+	write("Todavia no se anida")
+}
+else if(c1 > c2){
+	write("Apa, se esta anidando")
+}
+else{
+	write("Creo que funciona el anidamiento")
+}
+
+while (c1 > c2)
+{
+    write("c1 es mas grande que c2")
+    c1 := c1 + 1
+}
+
+while (isZero( contador - 10 ))
+{
+    write("El contador vale 10")
+    contador := contador - 1
+}
+if (isZero( s*7+1-h/2 ))
+{
+    write("La expresion es igual a cero")
+}
+
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +##+ “ewr” es una cte string +#
+
+y := equalExpressions(a + b, 5, b * 2, 3 + 2, a + b)  
+y := equalExpressions(0, -5, a + b)  
+
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#
+#+ “ewr” es una cte string +#

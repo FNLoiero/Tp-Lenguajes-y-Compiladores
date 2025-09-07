@@ -89,7 +89,7 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   {CTE_ENTERA}                        { return symbol(ParserSym.CTE_ENTERA, yytext()); }
   {CTE_FLOTANTE}                      { return symbol(ParserSym.CTE_FLOTANTE, yytext()); }
   {CTE_CADENA}                        { return symbol(ParserSym.CTE_CADENA, yytext()); }
-  
+  {COMENTARIO}                        {  }
 
   /* operators */
   {OP_SUMA}         { return symbol(ParserSym.OP_SUMA); }
