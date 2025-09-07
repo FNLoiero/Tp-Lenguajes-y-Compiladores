@@ -78,8 +78,9 @@ terminal IS_ZERO;
 
     //Especiales
     non terminal instruccion_especial;
-    non terminal OPERATION_EQUAL_EXPRESSIONS;
-    non terminal OPERATION_IS_ZERO;
+    non terminal parametros_operaciones;
+    non terminal operation_equal_expressions;
+    non terminal operation_is_zero;
 
     //Entrada y salida
     non terminal instruccion_entrada_salida;
@@ -102,7 +103,7 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
     instruccion_normal ::= asignacion | init;    
     instruccion_condicional ::= if | while;
     instruccion_entrada_salida ::= read | write;
-    instruccion_especial ::= OPERATION_EQUAL_EXPRESSIONS | OPERATION_IS_ZERO;
+    instruccion_especial ::= operation_equal_expressions | operation_is_zero;
 
 //Operaciones detalladas
 
@@ -110,7 +111,9 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     asignacion ::= ID OP_ASIG ID {: System.out.println("Se asigno el ID correctamente");:}
                  | ID OP_ASIG constante {: System.out.println("Se asigno el ID correctamente");:}
-                 | ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:};
+                 | ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:}
+                 | ID OP_ASIG operation_equal_expressions {: System.out.println("Se asigno el equal expressions");:}
+                 | ID OP_ASIG operation_is_zero {: System.out.println("Se asigno el operation is zero");:};
 
                  
     constante ::= CTE_ENTERA {: System.out.println("Entero usado");:}
@@ -132,7 +135,7 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     operacion ::= operacion OP_SUMA termino {: System.out.println("Suma");:}
             | operacion OP_RESTA termino {:System.out.println("Resta");:};    
-            | termino
+            | termino;
 
     termino ::= termino OP_MULT factor {: System.out.println("Multiplicación");:}
             | termino OP_DIV factor{: System.out.println("División");:}
@@ -173,3 +176,9 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
     parametro_write ::= ID | CTE_CADENA;
 
     //----------- Instrucciones especiales
+
+    parametros_operaciones ::= operacion | parametros_operaciones OP_COMA operacion;
+
+    operation_equal_expressions ::= PAR_ABRIR parametros_operaciones PAR_CERRAR {: System.out.println("Se hizo Equal Expression");:};
+    
+    operation_is_zero ::= PAR_ABRIR operacion PAR_CERRAR {: System.out.println("Se hizo Is Zero");:};
