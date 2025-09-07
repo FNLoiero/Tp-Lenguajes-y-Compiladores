@@ -56,12 +56,11 @@ terminal IS_ZERO;
     non terminal tipo_dato;
 
     //INIT
-    non terminal init; 
+    non terminal inicializacion;    
     non terminal declaraciones;    
     non terminal listado_variables;
 
-    //Aritmeticos
-    non terminal instruccion_aritmetica;
+    //Aritmeticos    
     non terminal operacion;
     non terminal termino;
     non terminal factor;     
@@ -70,8 +69,7 @@ terminal IS_ZERO;
     non terminal instruccion_condicional;
     non terminal if;
     non terminal while;
-    non terminal condicion;
-    non terminal operacion_logica;
+    non terminal condicion;    
     non terminal else_opcional;
     non terminal expresion_logica;
     non terminal comparador;
@@ -87,6 +85,7 @@ terminal IS_ZERO;
     non terminal read;
     non terminal write;
     non terminal parametro_write;
+     
 //
 
 // Start Symbol Definition
@@ -100,7 +99,7 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     instruccion ::=  instruccion_normal | instruccion_condicional 
                     | instruccion_entrada_salida | instruccion_especial;
-    instruccion_normal ::= asignacion | init;    
+    instruccion_normal ::= asignacion | inicializacion;    
     instruccion_condicional ::= if | while;
     instruccion_entrada_salida ::= read | write;
     instruccion_especial ::= operation_equal_expressions | operation_is_zero;
@@ -109,9 +108,7 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     //----------- Instrucciones normales
 
-    asignacion ::= ID OP_ASIG ID {: System.out.println("Se asigno el ID correctamente");:}
-                 | ID OP_ASIG constante {: System.out.println("Se asigno el ID correctamente");:}
-                 | ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:}
+    asignacion ::= ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:}
                  | ID OP_ASIG operation_equal_expressions {: System.out.println("Se asigno el equal expressions");:}
                  | ID OP_ASIG operation_is_zero {: System.out.println("Se asigno el operation is zero");:};
 
@@ -120,11 +117,11 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
                 | CTE_FLOTANTE {: System.out.println("Flotante usado");:}
                 | CTE_CADENA {: System.out.println("Cadena usada");:};
 
-    tipo_dato ::= DT_ENTERA {: System.out.println("Tipo Entero usado");:}
-                | DT_FLOTANTE {: System.out.println("Tipo Flotante usado");:}
-                | DT_CADENA {: System.out.println("Tipo Cadena usada");:};
+    tipo_dato ::= DT_INT {: System.out.println("Tipo Entero usado");:}
+                | DT_FLOAT {: System.out.println("Tipo Flotante usado");:}
+                | DT_STRING {: System.out.println("Tipo Cadena usada");:};
 
-    init ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:System.out.println("Bloque INIT");:};
+    inicializacion ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:System.out.println("Bloque INIT");:};
 
     declaraciones ::=  listado_variables OP_PUNTOS tipo_dato | declaraciones listado_variables OP_PUNTOS tipo_dato;
 
@@ -134,15 +131,14 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
     //----------- Aritmetica
 
     operacion ::= operacion OP_SUMA termino {: System.out.println("Suma");:}
-            | operacion OP_RESTA termino {:System.out.println("Resta");:};    
+            | operacion OP_RESTA termino {:System.out.println("Resta");:}
             | termino;
 
     termino ::= termino OP_MULT factor {: System.out.println("Multiplicación");:}
             | termino OP_DIV factor{: System.out.println("División");:}
             | factor;
 
-    factor ::= constante
-             | ID {: System.out.println("Id: " + id);:};
+    factor ::= constante | ID;
 
     //----------- Instrucciones condicional
 
@@ -179,6 +175,6 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     parametros_operaciones ::= operacion | parametros_operaciones OP_COMA operacion;
 
-    operation_equal_expressions ::= PAR_ABRIR parametros_operaciones PAR_CERRAR {: System.out.println("Se hizo Equal Expression");:};
+    operation_equal_expressions ::= EQUAL_EXPRESSIONS PAR_ABRIR parametros_operaciones PAR_CERRAR {: System.out.println("Se hizo Equal Expression");:};
     
-    operation_is_zero ::= PAR_ABRIR operacion PAR_CERRAR {: System.out.println("Se hizo Is Zero");:};
+    operation_is_zero ::= IS_ZERO PAR_ABRIR operacion PAR_CERRAR {: System.out.println("Se hizo Is Zero");:};
