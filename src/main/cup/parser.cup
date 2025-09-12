@@ -1,8 +1,13 @@
 package lyc.compiler;
 
 import java_cup.runtime.*;
+import java.util.Stack;
 
 class Parser;
+
+parser code {:    
+    private Stack<Object> variables = new Stack<Object>();    
+:};
 
 
 // Terminals
@@ -109,7 +114,13 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
 
     //----------- Instrucciones normales
 
-    asignacion ::= ID OP_ASIG operacion {: System.out.println("Se asigno el ID correctamente");:}
+    asignacion ::= ID:id OP_ASIG operacion {: 
+                        String tipoVar = lyc.compiler.files.SymbolTableGenerator.GetTipo(id);
+                        if (tipoVar == null || tipoVar == "") {
+                            throw new RuntimeException("Error: variable '" + id + "' no declarada.");
+                        }
+                        System.out.println("Se asigno el ID correctamente");
+                    :}
                  | ID OP_ASIG operation_equal_expressions {: System.out.println("Se asigno el equal expressions");:}
                  | ID OP_ASIG operation_is_zero {: System.out.println("Se asigno el operation is zero");:};
 
@@ -118,16 +129,45 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
                 | CTE_FLOTANTE {: System.out.println("Flotante usado");:}
                 | CTE_CADENA {: System.out.println("Cadena usada");:};
 
-    tipo_dato ::= DT_INT {: System.out.println("Tipo Entero usado");:}
-                | DT_FLOAT {: System.out.println("Tipo Flotante usado");:}
-                | DT_STRING {: System.out.println("Tipo Cadena usada");:};
+    tipo_dato ::= DT_FLOAT
+                    {:
+                        RESULT = "Float";
+                        System.out.println("Declaracion Float");
+                    :}
+                | DT_INT
+                    {:
+                        RESULT = "Int";
+                        System.out.println("Declaracion Int");
+                    :}
+                | DT_STRING
+                    {:
+                        RESULT = "String";
+                        System.out.println("Declaracion String");
+                    :};
 
     inicializacion ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:System.out.println("Bloque INIT");:};
 
-    declaraciones ::=  listado_variables OP_PUNTOS tipo_dato | declaraciones listado_variables OP_PUNTOS tipo_dato;
+    declaraciones ::=  listado_variables OP_PUNTOS tipo_dato:tipo {:
+                        for (Object IdUtilizar : variables) {
+                            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, tipo);                            
+                        }
+                        variables = new Stack<Object>(); 
+                    :}    
+    | declaraciones listado_variables OP_PUNTOS tipo_dato:tipo    
+    {:
+        for (Object IdUtilizar : variables) {
+            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, tipo);                            
+        }
+        variables = new Stack<Object>(); 
+    :};
 
-    listado_variables ::= ID {: System.out.println("Se hace una inicialización");:} 
-                        | listado_variables OP_COMA ID {: System.out.println("Se hace una inicialización");:};
+    listado_variables ::= ID:id {: 
+                            variables.push(id);
+                            System.out.println("Se hace una inicialización (id: " + id + ")" );
+                        :} 
+                        | listado_variables OP_COMA ID:id {:
+                            variables.push(id);                        
+                        :};
 
     //----------- Aritmetica
 
@@ -139,7 +179,15 @@ serie_de_instrucciones ::= instruccion | serie_de_instrucciones instruccion;
             | termino OP_DIV factor{: System.out.println("División");:}
             | factor;
 
-    factor ::= constante | ID | PAR_ABRIR operacion PAR_CERRAR;
+    factor ::= constante 
+    | ID:id {:
+                    String tipo = lyc.compiler.files.SymbolTableGenerator.GetTipo(id);
+                    if (tipo == null) {
+                        throw new RuntimeException("Error: variable '" + id + "' no declarada.");
+                    }                    
+                    System.out.println("Id: " + id);
+                :}
+    | PAR_ABRIR operacion PAR_CERRAR;
 
     //----------- Instrucciones condicional
 

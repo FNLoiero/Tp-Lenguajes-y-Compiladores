@@ -4,6 +4,7 @@ import java_cup.runtime.Symbol;
 import lyc.compiler.ParserSym;
 import lyc.compiler.model.*;
 import static lyc.compiler.constants.Constants.*;
+import lyc.compiler.files.SymbolTableGenerator;
 
 %%
 
@@ -84,11 +85,54 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
 
 
   /* identifiers */
-  {ID}                             { return symbol(ParserSym.ID, yytext()); }
+  {ID}
+  {
+      if (yytext().length() > MAX_LENGTH) {
+          throw new InvalidLengthException("Identificador demasiado largo (max 30): " + yytext());          
+      }
+      SymbolTableGenerator.Insert(yytext(), "ID", yytext());
+      return symbol(ParserSym.ID, yytext());
+  }
+
   /* Constants */
-  {CTE_ENTERA}                        { return symbol(ParserSym.CTE_ENTERA, yytext()); }
-  {CTE_FLOTANTE}                      { return symbol(ParserSym.CTE_FLOTANTE, yytext()); }
-  {CTE_CADENA}                        { return symbol(ParserSym.CTE_CADENA, yytext()); }
+  {CTE_ENTERA} {
+    try {
+      int valor = Integer.parseInt(yytext());
+      if (valor > 65535) {
+          throw new InvalidIntegerException("Constante entera fuera del rango de 0 a 65535: " + yytext());          
+      }
+    }
+    catch(Exception e) {
+      throw new InvalidIntegerException("Constante entera fuera del rango de 0 a 65535: " + yytext());      
+    }
+    SymbolTableGenerator.Insert("_" + yytext(), "CTE_ENTERA", yytext()); 
+    return symbol(ParserSym.CTE_ENTERA, yytext()); 
+  }
+  {CTE_FLOTANTE} {
+    try {
+      float valor = Float.parseFloat(yytext());
+      double min_pos = 1.4 * Math.pow(10, -45);
+      double max_pos = 3.4028235 * Math.pow(10, 38);
+
+      if ((valor != 0.0) && (Math.abs(valor) < min_pos || Math.abs(valor) > max_pos)) {
+        throw new InvalidIntegerException("Constante flotante fuera del rango de -3.4028235*10^38 a 3.3.4028235*10^38: " + yytext());        
+      }
+    } 
+    catch(Exception e) {
+      throw new InvalidIntegerException("Constante flotante fuera del rango de -3.4028235*10^38 a 3.3.4028235*10^38: " + yytext());      
+    }
+
+    SymbolTableGenerator.Insert("_" + yytext(), "CTE_FLOTANTE", yytext()); 
+    return symbol(ParserSym.CTE_FLOTANTE, yytext());
+  }
+  {CTE_CADENA} { 
+    String valor = yytext().substring(1, yytext().length() - 1);
+    if (valor.length() > MAX_LENGTH) {
+        throw new InvalidLengthException("Constante cadena excede los 30 caracteres: " + valor);    
+    }
+    SymbolTableGenerator.Insert("_" + yytext(), "CTE_CADENA", yytext()); 
+    return symbol(ParserSym.CTE_CADENA, yytext()); 
+  }
   {COMENTARIO}                        {  }
 
   /* operators */
