@@ -215,7 +215,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                         :} 
                         | listado_variables:lista OP_COMA ID:id {:
                             variables.push(id);
-                            RESULT = crearNodo("LISTA_VARS", (NodoArbol)lista, crearHoja((String)id));
+                            RESULT = crearNodo("listado_variables", (NodoArbol)lista, crearHoja((String)id));
                         :};
 
     //----------- Aritmetica
@@ -256,8 +256,8 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
     if ::= IF PAR_ABRIR condicion:cond PAR_CERRAR  
         LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR
         else_opcional:elseInst {:
-            RESULT = crearNodo("IF", crearNodo("CONDICION", (NodoArbol)cond, null), 
-                              crearNodo("BLOQUE", (NodoArbol)instrucciones, (NodoArbol)elseInst));
+            RESULT = crearNodo("IF", crearNodo("condicion", (NodoArbol)cond, null), 
+                              crearNodo("Cuerpo", (NodoArbol)instrucciones, (NodoArbol)elseInst));
             System.out.println("IF");
         :};
 
@@ -273,7 +273,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                       :};
 
     while ::= WHILE PAR_ABRIR condicion:cond PAR_CERRAR LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR {: 
-                RESULT = crearNodo("WHILE", crearNodo("CONDICION", (NodoArbol)cond, null), (NodoArbol)instrucciones);
+                RESULT = crearNodo("WHILE", crearNodo("CONDICION", (NodoArbol)cond, null), crearNodo("Cuerpo", (NodoArbol)instrucciones, null));
                 System.out.println("WHILE"); 
             :};
 
