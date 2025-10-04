@@ -12,12 +12,12 @@ parser code {:
     
     // Función para crear un nodo del árbol sintáctico
     private NodoArbol crearNodo(String operador, NodoArbol hijoIzquierdo, NodoArbol hijoDerecho) {
-        return new NodoArbol(operador, "OPERADOR", hijoIzquierdo, hijoDerecho);
+        return new NodoArbol(operador, hijoIzquierdo, hijoDerecho);
     }
     
     // Función para crear una hoja del árbol sintáctico
-    private NodoArbol crearHoja(String valor, String tipo) {
-        return new NodoArbol(valor, tipo);
+    private NodoArbol crearHoja(String valor) {
+        return new NodoArbol(valor);
     }
     
     // Función para obtener el árbol sintáctico generado
@@ -121,7 +121,7 @@ programa ::= serie_de_instrucciones:instrucciones {:
                     :};
 serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :} 
                         | serie_de_instrucciones:lista instruccion:inst {:                             
-                            RESULT = inst;
+                            RESULT = crearNodo("serie_de_instrucciones", (NodoArbol)lista, (NodoArbol)inst);
                           :};
 
 //Tipos de instrucciones
@@ -148,29 +148,29 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                         if (tipoVar == null || tipoVar == "") {
                             throw new RuntimeException("Error: variable '" + id + "' no declarada.");
                         }
-                        RESULT = crearNodo(":=", crearHoja((String)id, "ID"), (NodoArbol)expr);
+                        RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
                         System.out.println("Se asigno el ID correctamente");
                     :}
                  | ID:id OP_ASIG operation_equal_expressions:expr {: 
-                        RESULT = crearNodo(":=", crearHoja((String)id, "ID"), (NodoArbol)expr);
+                        RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
                         System.out.println("Se asigno el equal expressions");
                     :}
                  | ID:id OP_ASIG operation_is_zero:expr {: 
-                        RESULT = crearNodo(":=", crearHoja((String)id, "ID"), (NodoArbol)expr);
+                        RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
                         System.out.println("Se asigno el operation is zero");
                     :};
 
                  
     constante ::= CTE_ENTERA:valor {: 
-                        RESULT = crearHoja((String)valor, "CTE_ENTERA");
+                        RESULT = crearHoja((String)valor);
                         System.out.println("Entero usado"); 
                     :}
                 | CTE_FLOTANTE:valor {: 
-                        RESULT = crearHoja((String)valor, "CTE_FLOTANTE");
+                        RESULT = crearHoja((String)valor);
                         System.out.println("Flotante usado"); 
                     :}
                 | CTE_CADENA:valor {: 
-                        RESULT = crearHoja((String)valor, "CTE_CADENA");
+                        RESULT = crearHoja((String)valor);
                         System.out.println("Cadena usada"); 
                     :};
 
@@ -190,35 +190,32 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                         System.out.println("Declaracion String");
                     :};
 
-    inicializacion ::= INIT LLAVE_ABRIR declaraciones:decl LLAVE_CERRAR{:
-                        RESULT = crearNodo("INIT", (NodoArbol)decl, null);
+    inicializacion ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:                        
                         System.out.println("Bloque INIT");
                     :};
 
     declaraciones ::=  listado_variables:vars OP_PUNTOS tipo_dato:tipo {:
                         for (Object IdUtilizar : variables) {
                             lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);                            
-                        }
-                        RESULT = crearNodo("DECLARACION", (NodoArbol)vars, crearHoja((String)tipo, "TIPO"));
+                        }                        
                         variables = new Stack<Object>(); 
                     :}    
     | declaraciones:decls listado_variables:vars OP_PUNTOS tipo_dato:tipo    
     {:
         for (Object IdUtilizar : variables) {
             lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);                            
-        }
-        RESULT = crearNodo("DECLARACION", (NodoArbol)decls, crearNodo("DECLARACION", (NodoArbol)vars, crearHoja((String)tipo, "TIPO")));
+        }        
         variables = new Stack<Object>(); 
     :};
 
     listado_variables ::= ID:id {: 
                             variables.push(id);
-                            RESULT = crearHoja((String)id, "ID");
+                            RESULT = crearHoja((String)id);
                             System.out.println("Se hace una inicialización (id: " + id + ")" );
                         :} 
                         | listado_variables:lista OP_COMA ID:id {:
                             variables.push(id);
-                            RESULT = crearNodo("LISTA_VARS", (NodoArbol)lista, crearHoja((String)id, "ID"));
+                            RESULT = crearNodo("LISTA_VARS", (NodoArbol)lista, crearHoja((String)id));
                         :};
 
     //----------- Aritmetica
@@ -249,7 +246,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                     if (tipo == null) {
                         throw new RuntimeException("Error: variable '" + id + "' no declarada.");
                     }                    
-                    RESULT = crearHoja((String)id, "ID");
+                    RESULT = crearHoja((String)id);
                     System.out.println("Id: " + id);
                 :}
     | PAR_ABRIR operacion:expr PAR_CERRAR {: RESULT = expr; :};
@@ -322,21 +319,21 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
 
     //----------- Instrucciones entrada y salida
     read ::= READ PAR_ABRIR ID:id PAR_CERRAR {: 
-                RESULT = crearNodo("READ", crearHoja((String)id, "ID"), null);
+                RESULT = crearNodo("READ", crearHoja((String)id), null);
                 System.out.println("Se hizo una lectura");
             :};
     write ::= WRITE PAR_ABRIR parametro_write:param PAR_CERRAR {: 
                 RESULT = crearNodo("WRITE", (NodoArbol)param, null);
                 System.out.println("Se hizo una escritura");
             :};
-    parametro_write ::= ID:id {: RESULT = crearHoja((String)id, "ID"); :} 
-                      | CTE_CADENA:cadena {: RESULT = crearHoja((String)cadena, "CTE_CADENA"); :};
+    parametro_write ::= ID:id {: RESULT = crearHoja((String)id); :} 
+                      | CTE_CADENA:cadena {: RESULT = crearHoja((String)cadena); :};
 
     //----------- Instrucciones especiales
 
     parametros_operaciones ::= operacion:op {: RESULT = op; :} 
                             | parametros_operaciones:params OP_COMA operacion:op {:
-                                RESULT = crearNodo("PARAMS", (NodoArbol)params, (NodoArbol)op);
+                                RESULT = crearNodo("params_operacion", (NodoArbol)params, (NodoArbol)op);
                             :};
 
     operation_equal_expressions ::= EQUAL_EXPRESSIONS PAR_ABRIR parametros_operaciones:params PAR_CERRAR {: 
