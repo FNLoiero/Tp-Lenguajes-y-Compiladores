@@ -17,13 +17,19 @@ public class IntermediateCodeGenerator implements FileGenerator {
         if (arbolSintactico != null) {
             fileWriter.write("ÁRBOL SINTÁCTICO GENERADO:\n");
             fileWriter.write("==========================\n\n");
-            imprimirArbol(fileWriter, arbolSintactico, 0);
+            //imprimirArbolVisual(fileWriter, arbolSintactico, 0);                       
+            imprimirArbolLineal(fileWriter, arbolSintactico);
         } else {
             fileWriter.write("No se generó árbol sintáctico.");
         }
     }
 
-    private void imprimirArbol(FileWriter fileWriter, NodoArbol nodo, int nivel) throws IOException {
+
+    ///Mantener método para poder hacer debugging de manera visual.
+    ///Sustituir en el método Generate para que se imprima de esta manera
+    /// NO ES LA FORMA FINAL EN LA QUE SE DEBE IMPRIMIR POR LO QUE EN LA 
+    /// VERSIÖN SUBIDA Generate SIEMPRE DEBE USAR EL MÉTODO imprimirArbolLineal
+    private void imprimirArbolVisual(FileWriter fileWriter, NodoArbol nodo, int nivel) throws IOException {
         if (nodo == null) {
             return;
         }
@@ -34,25 +40,48 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
 
         // Imprimir el nodo
-        fileWriter.write("├─ " + nodo.getValor() + " (" + nodo.getTipo() + ")\n");
+        fileWriter.write("├─ " + nodo.getValor() + "\n");
 
         // Imprimir hijos recursivamente
         if (nodo.getLeft() != null) {
-            fileWriter.write("  ");
-            for (int i = 0; i < nivel; i++) {
-                fileWriter.write("  ");
-            }
-            fileWriter.write("├─ LEFT:\n");
-            imprimirArbol(fileWriter, nodo.getLeft(), nivel + 2);
+            imprimirArbolVisual(fileWriter, nodo.getLeft(), nivel + 1);
         }
 
         if (nodo.getRight() != null) {
-            fileWriter.write("  ");
-            for (int i = 0; i < nivel; i++) {
-                fileWriter.write("  ");
-            }
-            fileWriter.write("├─ RIGHT:\n");
-            imprimirArbol(fileWriter, nodo.getRight(), nivel + 2);
+            imprimirArbolVisual(fileWriter, nodo.getRight(), nivel + 1);
         }
+    }
+
+    private void imprimirArbolLineal(FileWriter fileWriter, NodoArbol nodo) throws IOException {
+        if (nodo == null) {
+            return;
+        }
+
+        // Recorrer en postorden (izquierda, derecha, padre)
+        imprimirArbolLinealRecursivo(fileWriter, nodo);
+    }
+
+    private void imprimirArbolLinealRecursivo(FileWriter fileWriter, NodoArbol nodo) throws IOException {
+        if (nodo == null) {
+            return;
+        }
+
+        // Si es una hoja, solo imprimir el valor
+        if (nodo.esHoja()) {
+            fileWriter.write(nodo.getValor() + " ");
+            return;
+        }
+
+        // Recursividad izquierda
+        if (nodo.getLeft() != null) 
+            imprimirArbolLinealRecursivo(fileWriter, nodo.getLeft());
+        
+
+        // Recursividad derecha
+        if (nodo.getRight() != null) 
+            imprimirArbolLinealRecursivo(fileWriter, nodo.getRight());        
+
+        //Nodo principal
+        fileWriter.write(nodo.getValor() + " ");
     }
 }
