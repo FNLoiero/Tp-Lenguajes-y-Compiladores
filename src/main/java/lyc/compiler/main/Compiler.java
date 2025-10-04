@@ -5,6 +5,8 @@ import lyc.compiler.factories.FileFactory;
 import lyc.compiler.factories.ParserFactory;
 import lyc.compiler.files.FileOutputWriter;
 import lyc.compiler.files.SymbolTableGenerator;
+import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.model.NodoArbol;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -22,8 +24,16 @@ public final class Compiler {
         try (Reader reader = FileFactory.create(args[0])) {
             Parser parser = ParserFactory.create(reader);
             parser.parse();
+            
+            // Obtener el árbol sintáctico del parser
+            NodoArbol arbolSintactico = parser.getArbolSintactico();
+            
             FileOutputWriter.writeOutput("symbol-table.txt", new SymbolTableGenerator());
-            FileOutputWriter.writeOutput("intermediate-code.txt", new SymbolTableGenerator());
+            
+            // Configurar el árbol sintáctico en el generador de código intermedio
+            IntermediateCodeGenerator.setArbolSintactico(arbolSintactico);
+            FileOutputWriter.writeOutput("intermediate-code.txt", new IntermediateCodeGenerator());
+            
             FileOutputWriter.writeOutput("final.asm", new SymbolTableGenerator());
         } catch (IOException e) {
             System.err.println("There was an error trying to read input file " + e.getMessage());
