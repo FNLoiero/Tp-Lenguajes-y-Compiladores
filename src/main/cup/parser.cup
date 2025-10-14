@@ -115,8 +115,8 @@ terminal COMENTARIO;
 
 start with programa;
 
-programa ::= serie_de_instrucciones:instrucciones {: 
-                        arbolSintactico = (NodoArbol)instrucciones;
+programa ::= serie_de_instrucciones:instrucciones {:                         
+                        arbolSintactico = crearNodo("Programa", (NodoArbol)instrucciones, null);;
                         System.out.println("FIN"); 
                     :};
 serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :} 
