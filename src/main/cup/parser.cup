@@ -121,7 +121,7 @@ programa ::= serie_de_instrucciones:instrucciones {:
                     :};
 serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :} 
                         | serie_de_instrucciones:lista instruccion:inst {:                             
-                            RESULT = crearNodo("serie_de_instrucciones", (NodoArbol)lista, (NodoArbol)inst);
+                            RESULT = crearNodo("instrucción", (NodoArbol)lista, (NodoArbol)inst);
                           :};
 
 //Tipos de instrucciones
