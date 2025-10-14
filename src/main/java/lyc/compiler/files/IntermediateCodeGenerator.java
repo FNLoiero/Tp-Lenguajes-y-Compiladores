@@ -85,8 +85,9 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
         
         // Escapar comillas dobles y caracteres especiales
-        return valor.replace("\"", "\\\"")
-                   .replace("\\", "\\\\")
+        return valor.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("%", "\\%")
                    .replace("\n", "\\n")
                    .replace("\r", "\\r")
                    .replace("\t", "\\t");
