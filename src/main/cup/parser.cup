@@ -173,11 +173,11 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                     :}
                  | ID:id OP_ASIG operation_equal_expressions:expr {: 
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
-                        System.out.println("Se asigno el equal expressions");
+                        System.out.println("ASIGNACION realizada " + (String)id + " = EQUALEXPRESION");
                     :}
                  | ID:id OP_ASIG operation_is_zero:expr {: 
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
-                        System.out.println("Se asigno el operation is zero");
+                        System.out.println("ASIGNACION realizada " + (String)id + " = ISZERO");
                     :};
 
                  
@@ -276,18 +276,18 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
         else_opcional:elseInst {:
             RESULT = crearNodo("IF", crearNodo("Condicion", (NodoArbol)cond, null), 
                               crearNodo("Cuerpo", (NodoArbol)instrucciones, (NodoArbol)elseInst));
-            System.out.println("IF");
+            System.out.println("BLOQUE - IF");
         :};
 
     else_opcional ::= ELSE 
                       LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR {: 
                         RESULT = (NodoArbol)instrucciones;
-                        System.out.println("FIN ELSE");
+                        System.out.println("BLOQUE - ELSE");
                       :}
                       |
                       | ELSE if:ifInst {: 
                         RESULT = ifInst;
-                        System.out.println("ELSE IF");
+                        System.out.println("BLOQUE - IF ANIDADO");
                       :};
 
     while ::= WHILE PAR_ABRIR condicion:cond PAR_CERRAR LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR {: 
@@ -302,7 +302,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                 :}
                 | NOT expresion_logica:expr {: 
                     RESULT = crearNodo("NOT", (NodoArbol)expr, null);
-                    System.out.println("CONDICION LOGICA - NEGADA");
+                    System.out.println("CONDICION LOGICA - NOT");
                 :}
                 | operation_is_zero:isZero {: 
                     RESULT = isZero;
@@ -341,11 +341,11 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
     //----------- Instrucciones entrada y salida
     read ::= READ PAR_ABRIR ID:id PAR_CERRAR {: 
                 RESULT = crearNodo("READ", crearHoja((String)id), null);
-                System.out.println("Se hizo una lectura. Lexema ID: " + (String)id);
+                System.out.println("READ. Lexema ID: " + (String)id);
             :};
     write ::= WRITE PAR_ABRIR parametro_write:param PAR_CERRAR {: 
                 RESULT = crearNodo("WRITE", (NodoArbol)param, null);
-                System.out.println("Se hizo una escritura. Lexema: " + ((NodoArbol)param).getValor() );
+                System.out.println("WRITE. Lexema: " + ((NodoArbol)param).getValor() );
             :};
     parametro_write ::= ID:id {: RESULT = crearHoja((String)id); :} 
                       | CTE_CADENA:cadena {: RESULT = crearHoja((String)cadena); :};
