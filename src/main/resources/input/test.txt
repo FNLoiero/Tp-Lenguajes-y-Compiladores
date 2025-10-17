@@ -64,6 +64,17 @@ else
     write("o c3 es mas chico a c2")
 }
 
+
+if ((8 + 3) > 5+8*6 AND c3 > c2)
+{
+    write("OP compleja - AND")
+}
+
+if ((8 + 3) > 5+8*6 OR c3 > c2)
+{
+    write("OP compleja - OR")
+}
+
 c1 := 1 #+ “ewr” es una cte string +#
 c2 := 3 #+ “ewr” es una cte string +#
 
