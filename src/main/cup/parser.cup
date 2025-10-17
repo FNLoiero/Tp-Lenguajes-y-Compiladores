@@ -24,6 +24,25 @@ parser code {:
     public NodoArbol getArbolSintactico() {
         return arbolSintactico;
     }
+    
+    // Función para obtener el tipo de operación basado en el operador
+    private String obtenerTipoOperacion(NodoArbol nodo) {
+        if (nodo == null) return "";
+        
+        String operador = nodo.getValor();
+        switch (operador) {
+            case "+":
+                return "SUMA";
+            case "-":
+                return "RESTA";
+            case "*":
+                return "MULTIPLICACION";
+            case "/":
+                return "DIVISION";
+            default:
+                return operador; // Si no es un operador conocido, devolver el valor original
+        }
+    }
 :};
 
 
@@ -149,8 +168,8 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                             throw new RuntimeException("Error: variable '" + id + "' no declarada.");
                         }
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
-                        String lexExpr = ((NodoArbol)expr) != null ? ((NodoArbol)expr).getValor() : "";
-                        System.out.println("ASIGNACION realizada: " + (String)id + " = " + lexExpr);
+                        String tipoOperacion = ((NodoArbol)expr) != null ? obtenerTipoOperacion((NodoArbol)expr) : "";
+                        System.out.println("ASIGNACION realizada: " + (String)id + " = " + tipoOperacion);
                     :}
                  | ID:id OP_ASIG operation_equal_expressions:expr {: 
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
@@ -164,12 +183,15 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                  
     constante ::= CTE_ENTERA:valor {: 
                         RESULT = crearHoja((String)valor);
+                        System.out.println("CONSTANTE: " + valor);
                     :}
                 | CTE_FLOTANTE:valor {: 
                         RESULT = crearHoja((String)valor);
+                        System.out.println("CONSTANTE: " + valor);
                     :}
                 | CTE_CADENA:valor {: 
                         RESULT = crearHoja((String)valor);
+                        System.out.println("CONSTANTE: " + valor);
                     :};
 
     tipo_dato ::= DT_FLOAT
@@ -276,47 +298,50 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
 
     condicion ::= expresion_logica:expr {: 
                     RESULT = expr;
-                    System.out.println("Expresion");
+                    System.out.println("CONDICION LOGICA");
                 :}
                 | NOT expresion_logica:expr {: 
                     RESULT = crearNodo("NOT", (NodoArbol)expr, null);
-                    System.out.println("NOT");
+                    System.out.println("CONDICION LOGICA - NEGADA");
                 :}
                 | operation_is_zero:isZero {: 
                     RESULT = isZero;
-                    System.out.println("Condicion IsZero");
+                    System.out.println("CONDICION LOGICA - IS_ZERO");
                 :};
 
 
 
     expresion_logica ::= operacion:izq comparador:comp operacion:der {:
                             RESULT = crearNodo((String)comp, (NodoArbol)izq, (NodoArbol)der);
+                            System.out.println("CONDICION SIMPLE - TIPO: " + comp);
                         :}
                     | operacion:izq1 comparador:comp1 operacion:der1 AND operacion:izq2 comparador:comp2 operacion:der2 {:
                             NodoArbol expr1 = crearNodo((String)comp1, (NodoArbol)izq1, (NodoArbol)der1);
                             NodoArbol expr2 = crearNodo((String)comp2, (NodoArbol)izq2, (NodoArbol)der2);
                             RESULT = crearNodo("AND", expr1, expr2);
+                            System.out.println("CONDICION COMPLEJA - AND");
                         :}
                     | operacion:izq1 comparador:comp1 operacion:der1 OR operacion:izq2 comparador:comp2 operacion:der2 {:
                             NodoArbol expr1 = crearNodo((String)comp1, (NodoArbol)izq1, (NodoArbol)der1);
                             NodoArbol expr2 = crearNodo((String)comp2, (NodoArbol)izq2, (NodoArbol)der2);
                             RESULT = crearNodo("OR", expr1, expr2);
+                            System.out.println("CONDICION COMPLEJA - OR");
                         :};
 
     comparador ::= COMP_MEN {: 
                     RESULT = "<";
-                    System.out.println("Operador menor");
+                    System.out.println("OPERADOR MENOR");
                 :}
                  | COMP_MAY {: 
                     RESULT = ">";
-                    System.out.println("Operador mayor");
+                    System.out.println("OPERADOR MAYOR");
                 :};
 
 
     //----------- Instrucciones entrada y salida
     read ::= READ PAR_ABRIR ID:id PAR_CERRAR {: 
                 RESULT = crearNodo("READ", crearHoja((String)id), null);
-                System.out.println("Se hizo una lectura. Lexema: " + (String)id);
+                System.out.println("Se hizo una lectura. Lexema ID: " + (String)id);
             :};
     write ::= WRITE PAR_ABRIR parametro_write:param PAR_CERRAR {: 
                 RESULT = crearNodo("WRITE", (NodoArbol)param, null);
