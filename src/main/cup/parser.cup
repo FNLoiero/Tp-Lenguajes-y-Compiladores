@@ -117,7 +117,7 @@ start with programa;
 
 programa ::= serie_de_instrucciones:instrucciones {:                         
                         arbolSintactico = crearNodo("Programa", (NodoArbol)instrucciones, null);;
-                        System.out.println("FIN"); 
+                        System.out.println("----------------------------------------------FIN----------------------------------------------"); 
                     :};
 serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :} 
                         | serie_de_instrucciones:lista instruccion:inst {:                             
@@ -150,7 +150,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                         }
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
                         String lexExpr = ((NodoArbol)expr) != null ? ((NodoArbol)expr).getValor() : "";
-                        System.out.println("Se asignó el ID: " + (String)id + " con lexema: " + lexExpr);
+                        System.out.println("ASIGNACION realizada: " + (String)id + " = " + lexExpr);
                     :}
                  | ID:id OP_ASIG operation_equal_expressions:expr {: 
                         RESULT = crearNodo(":=", crearHoja((String)id), (NodoArbol)expr);
@@ -164,47 +164,43 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                  
     constante ::= CTE_ENTERA:valor {: 
                         RESULT = crearHoja((String)valor);
-                        System.out.println("Entero usado: " + (String)valor);
                     :}
                 | CTE_FLOTANTE:valor {: 
                         RESULT = crearHoja((String)valor);
-                        System.out.println("Flotante usado: " + (String)valor);
                     :}
                 | CTE_CADENA:valor {: 
                         RESULT = crearHoja((String)valor);
-                        System.out.println("Cadena usada: " + (String)valor);
                     :};
 
     tipo_dato ::= DT_FLOAT
                     {:
                         RESULT = "Float";
-                        System.out.println("Declaracion Float");
                     :}
                 | DT_INT
                     {:
                         RESULT = "Int";
-                        System.out.println("Declaracion Int");
                     :}
                 | DT_STRING
                     {:
                         RESULT = "String";
-                        System.out.println("Declaracion String");
                     :};
 
     inicializacion ::= INIT LLAVE_ABRIR declaraciones LLAVE_CERRAR{:                        
-                        System.out.println("Bloque INIT");
+                        System.out.println("----------------------------------------------FIN BLOQUE INIT----------------------------------------------");
                     :};
 
     declaraciones ::=  listado_variables:vars OP_PUNTOS tipo_dato:tipo {:
                         for (Object IdUtilizar : variables) {
-                            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);                            
+                            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);
+                            System.out.println("Se hace una inicializacion (id: " + IdUtilizar + ", TIPO: " + (String)tipo + ")");
                         }                        
                         variables = new Stack<Object>(); 
                     :}    
     | declaraciones:decls listado_variables:vars OP_PUNTOS tipo_dato:tipo    
     {:
         for (Object IdUtilizar : variables) {
-            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);                            
+            lyc.compiler.files.SymbolTableGenerator.SetTipo(IdUtilizar, (String)tipo);
+            System.out.println("Se hace una inicializacion (id: " + IdUtilizar + ", TIPO: " + (String)tipo + ")");
         }        
         variables = new Stack<Object>(); 
     :};
@@ -212,7 +208,6 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
     listado_variables ::= ID:id {: 
                             variables.push(id);
                             RESULT = crearHoja((String)id);
-                            System.out.println("Se hace una inicialización (id: " + id + ")" );
                         :} 
                         | listado_variables:lista OP_COMA ID:id {:
                             variables.push(id);
@@ -223,21 +218,21 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
 
     operacion ::= operacion:izq OP_SUMA termino:der {: 
                         RESULT = crearNodo("+", (NodoArbol)izq, (NodoArbol)der);
-                        System.out.println("Suma");
+                        System.out.println("OPERACION Suma");
                     :}
             | operacion:izq OP_RESTA termino:der {: 
                         RESULT = crearNodo("-", (NodoArbol)izq, (NodoArbol)der);
-                        System.out.println("Resta");
+                        System.out.println("OPERACION Resta");
                     :}
             | termino:term {: RESULT = term; :};
 
     termino ::= termino:izq OP_MULT factor:der {: 
                         RESULT = crearNodo("*", (NodoArbol)izq, (NodoArbol)der);
-                        System.out.println("Multiplicación");
+                        System.out.println("OPERACION Multiplicacion");
                     :}
             | termino:izq OP_DIV factor:der {: 
                         RESULT = crearNodo("/", (NodoArbol)izq, (NodoArbol)der);
-                        System.out.println("División");
+                        System.out.println("OPERACION Division");
                     :}
             | factor:fact {: RESULT = fact; :};
 
@@ -281,7 +276,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
 
     condicion ::= expresion_logica:expr {: 
                     RESULT = expr;
-                    System.out.println("Expresión");
+                    System.out.println("Expresion");
                 :}
                 | NOT expresion_logica:expr {: 
                     RESULT = crearNodo("NOT", (NodoArbol)expr, null);
@@ -289,7 +284,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                 :}
                 | operation_is_zero:isZero {: 
                     RESULT = isZero;
-                    System.out.println("Condición IsZero");
+                    System.out.println("Condicion IsZero");
                 :};
 
 
