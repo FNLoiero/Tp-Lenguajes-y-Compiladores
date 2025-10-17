@@ -115,13 +115,13 @@ terminal COMENTARIO;
 
 start with programa;
 
-programa ::= serie_de_instrucciones:instrucciones {: 
-                        arbolSintactico = (NodoArbol)instrucciones;
+programa ::= serie_de_instrucciones:instrucciones {:                         
+                        arbolSintactico = crearNodo("Programa", (NodoArbol)instrucciones, null);;
                         System.out.println("FIN"); 
                     :};
 serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :} 
                         | serie_de_instrucciones:lista instruccion:inst {:                             
-                            RESULT = crearNodo("serie_de_instrucciones", (NodoArbol)lista, (NodoArbol)inst);
+                            RESULT = crearNodo("instrucción", (NodoArbol)lista, (NodoArbol)inst);
                           :};
 
 //Tipos de instrucciones
@@ -257,14 +257,14 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
     if ::= IF PAR_ABRIR condicion:cond PAR_CERRAR  
         LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR
         else_opcional:elseInst {:
-            RESULT = crearNodo("IF", crearNodo("condicion", (NodoArbol)cond, null), 
+            RESULT = crearNodo("IF", crearNodo("Condicion", (NodoArbol)cond, null), 
                               crearNodo("Cuerpo", (NodoArbol)instrucciones, (NodoArbol)elseInst));
             System.out.println("IF");
         :};
 
     else_opcional ::= ELSE 
                       LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR {: 
-                        RESULT = crearNodo("ELSE", (NodoArbol)instrucciones, null);
+                        RESULT = (NodoArbol)instrucciones;
                         System.out.println("FIN ELSE");
                       :}
                       |
@@ -274,7 +274,7 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                       :};
 
     while ::= WHILE PAR_ABRIR condicion:cond PAR_CERRAR LLAVE_ABRIR serie_de_instrucciones:instrucciones LLAVE_CERRAR {: 
-                RESULT = crearNodo("WHILE", crearNodo("CONDICION", (NodoArbol)cond, null), crearNodo("Cuerpo", (NodoArbol)instrucciones, null));
+                RESULT = crearNodo("WHILE", crearNodo("Condición", (NodoArbol)cond, null), crearNodo("Cuerpo", (NodoArbol)instrucciones, null));
                 System.out.println("WHILE"); 
             :};
 

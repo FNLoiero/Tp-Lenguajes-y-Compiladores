@@ -86,3 +86,9 @@ A tener en cuenta:
 4. Vea los criterios de aprobación de cada entrega para ver qué tests deben funcionar en cada punto de control.
 5. Cada grupo podrá agregar tests que considere apropiados a los tests ya provistos, sin remover ninguno de los test base.
 6. Cada grupo deberá agregar al menos un test para cada uno de sus temas especiales.
+
+
+
+Comando para generar grafo de arbol:
+
+dot -Tpng intermediate-code.txt -o symbol-table.png
