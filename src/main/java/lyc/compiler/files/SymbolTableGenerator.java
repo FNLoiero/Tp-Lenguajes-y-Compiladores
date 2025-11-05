@@ -72,5 +72,9 @@ public class SymbolTableGenerator implements FileGenerator{
         return sb.toString();
     }
 
+    public static HashMap<String, Symbol> getTable() {
+        return table;
+    }
+
 }
 
