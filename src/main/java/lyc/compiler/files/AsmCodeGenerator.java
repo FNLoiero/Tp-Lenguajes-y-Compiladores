@@ -75,7 +75,8 @@ public class AsmCodeGenerator implements FileGenerator {
     }
 
     private void generarEncabezado() {
-        codigoAsm.append("include macros2.asm\n");
+        codigoAsm.append("include macros.asm\n");
+        codigoAsm.append("include macros2.asm\n");        
         codigoAsm.append("include number.asm\n\n");
         codigoAsm.append(".MODEL  LARGE\n");
         codigoAsm.append(".386\n");
@@ -103,7 +104,14 @@ public class AsmCodeGenerator implements FileGenerator {
         // Generar constantes string (CTE_CADENA)
         for (Symbol symbol : tabla.values()) {
             if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {
-                String nombreStr = "T_" + symbol.nombre.replace("_", "");
+                // Limpiar el nombre del símbolo: remover prefijo _ y comillas
+                String nombreLimpio = symbol.nombre.replace("_", "").replace("\"", "");
+                // Si el nombre sigue siendo muy largo o tiene caracteres especiales, usar hash
+                if (nombreLimpio.length() > 20 || !nombreLimpio.matches("^[a-zA-Z0-9_]+$")) {
+                    nombreLimpio = "STR_" + Math.abs(symbol.valor.hashCode());
+                }
+                String nombreStr = "T_" + nombreLimpio;
+                
                 // Limpiar el valor de comillas si las tiene
                 String valor = symbol.valor;
                 if (valor.startsWith("\"") && valor.endsWith("\"")) {
@@ -227,8 +235,9 @@ public class AsmCodeGenerator implements FileGenerator {
                 codigoAsm.append("    fstp ").append(nombreVar).append("\n");
             } else if ("String".equals(tipoVar)) {
                 // Para strings, se necesita copiar el string
-                codigoAsm.append("    lea si, ").append(exprResult).append("\n");
-                codigoAsm.append("    lea di, ").append(nombreVar).append("\n");
+                // En modo LARGE, usar OFFSET para obtener la dirección
+                codigoAsm.append("    mov si, OFFSET ").append(exprResult).append("\n");
+                codigoAsm.append("    mov di, OFFSET ").append(nombreVar).append("\n");
                 codigoAsm.append("    STRCPY\n");
             }
         }
