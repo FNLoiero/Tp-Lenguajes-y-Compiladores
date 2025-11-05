@@ -275,7 +275,19 @@ public class AsmCodeGenerator implements FileGenerator {
                 String nombreStr = generarStringLiteral(valor);
                 return nombreStr;
             } else {
-                // Es una variable
+                // Es una variable - verificar que existe en la tabla de símbolos
+                try {
+                    String tipo = SymbolTableGenerator.GetTipo(valor);
+                    if (tipo == null || tipo.isEmpty()) {
+                        throw new RuntimeException("Error: variable '" + valor + "' no declarada en la generación de código.");
+                    }
+                } catch (RuntimeException e) {
+                    // Si la excepción menciona "no encontrado", es una variable no declarada
+                    if (e.getMessage().contains("no encontrado")) {
+                        throw new RuntimeException("Error: variable '" + valor + "' no declarada. Asegúrate de declarar todas las variables en el bloque INIT.");
+                    }
+                    throw e;
+                }
                 return "_" + valor;
             }
         }
@@ -371,6 +383,15 @@ public class AsmCodeGenerator implements FileGenerator {
     }
 
     private String obtenerTipoVariable(String nombreVar) {
+        // Si es una variable temporal, no buscar en tabla de símbolos
+        if (nombreVar.startsWith("_temp") || nombreVar.startsWith("_temp_lit_") || nombreVar.startsWith("_float_lit_")) {
+            // Variables temporales son enteros por defecto, a menos que contengan un punto
+            if (nombreVar.contains("float")) {
+                return "Float";
+            }
+            return "Int";
+        }
+        
         // Remover prefijo _
         String nombre = nombreVar.startsWith("_") ? nombreVar.substring(1) : nombreVar;
         try {

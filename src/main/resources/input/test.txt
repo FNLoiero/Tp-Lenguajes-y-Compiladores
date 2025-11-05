@@ -1,6 +1,6 @@
 init {
-    a, b, d, z : Float
-    c1, c2, c3, x, c , contador: Int
+    a, b, d, z, e : Float
+    c1, c2, c3, x, c , s, h ,contador: Int
     b, base, y : String
 }
 
@@ -106,9 +106,6 @@ if (isZero( s*7+1-h/2 ))
     write("La expresion es igual a cero")
 }
 
-
-y := equalExpressions(a + b, 5, b * 2, 3 + 2, a + b)  
-y := equalExpressions(0, -5, a + b)  
 
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
 #+ 1. Error de string, el literal no está cerrado correctamente. +#

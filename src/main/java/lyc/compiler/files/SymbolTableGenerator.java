@@ -44,6 +44,18 @@ public class SymbolTableGenerator implements FileGenerator{
     }
 
     public static String GetTipo(Object nombre) {
+        // Si es una variable temporal generada por el compilador, no buscar en tabla
+        String nombreStr = nombre.toString();
+        if (nombreStr.startsWith("temp") || nombreStr.startsWith("_temp") || 
+            nombreStr.startsWith("temp_lit_") || nombreStr.startsWith("_temp_lit_") ||
+            nombreStr.startsWith("float_lit_") || nombreStr.startsWith("_float_lit_")) {
+            // Variables temporales: determinar tipo por el nombre
+            if (nombreStr.contains("float")) {
+                return "Float";
+            }
+            return "Int"; // Por defecto son enteros
+        }
+        
         Symbol entry = table.get(nombre);
         if (entry != null)
             return entry.tipoDato;
