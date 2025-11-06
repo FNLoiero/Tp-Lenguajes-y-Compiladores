@@ -44,11 +44,14 @@ public class AsmCodeGenerator implements FileGenerator {
             return;
         }
 
-        generarSeccionData();
+        //Se lee el cuerpo y la data inicial pero todavía no se genera nada final
+        IngresarVariablesTablaSimboloEnDATA();
         StringBuilder codigoBody = generarBODY();
-        generarEncabezado();
-        IngresarVariablesAuxiliaresDATA();
-        codigoAsm.append(codigoBody.toString());
+
+        //Desde aca se comienza a generar el código final
+        generarEncabezado(); //INICIO
+        GenerarSeccionDATA(); //DATA con temporales y datos de la tabla de símbolos
+        codigoAsm.append(codigoBody.toString()); //Código del body
         fileWriter.write(codigoAsm.toString());
     }
     // </editor-fold>
@@ -64,15 +67,18 @@ public class AsmCodeGenerator implements FileGenerator {
         codigoAsm.append("MAXTEXTSIZE equ 50\n\n");
     }
 
-    private void generarSeccionData() {
+    private void IngresarVariablesTablaSimboloEnDATA() {
         HashMap<String, Symbol> tabla = SymbolTableGenerator.getTable();
         for (Symbol symbol : tabla.values()) {
             if (symbol.tipoDato != null && !symbol.tipoDato.isEmpty()) {
                 if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {                    
                     String valor = symbol.valor;
+                    
                     if (valor.startsWith("\"") && valor.endsWith("\""))
                         valor = valor.substring(1, valor.length() - 1);                    
-                    agregarVariableDATA(valor);
+                    
+                        IngresarCTECadenaDATA(valor);
+
                 } else if (!symbol.tipoDato.equals("CTE_CADENA") && !symbol.nombre.startsWith("_")) {                    
                     String nombreVar = "_" + symbol.nombre;
                     if ("Int".equals(symbol.tipoDato) || "Float".equals(symbol.tipoDato))
@@ -86,7 +92,9 @@ public class AsmCodeGenerator implements FileGenerator {
         seccionData.append("    _msgOK            db  0DH,0AH,\"Se ejecuto OK\",'$'\n");
     }
 
-    private void IngresarVariablesAuxiliaresDATA() {
+    private void GenerarSeccionDATA() {
+        //Durante el prograba se generaron variables auxiliares y se las deben ingresar
+        //en el .DATA
         for (String temp : temporalesDeclaradas) {
             seccionData.append("    ").append(temp).append("         dd  ?\n");
         }
@@ -581,7 +589,7 @@ public class AsmCodeGenerator implements FileGenerator {
         }
     }
     
-    private String agregarVariableDATA(String contenido) {        
+    private String IngresarCTECadenaDATA(String contenido) {        
         if (constantesString.containsKey(contenido))
             return constantesString.get(contenido);       
         
@@ -598,7 +606,7 @@ public class AsmCodeGenerator implements FileGenerator {
     private String generarStringLiteral(String valor) {
         // Quitar comillas
         String contenido = valor.substring(1, valor.length() - 1);        
-        return agregarVariableDATA(contenido);
+        return IngresarCTECadenaDATA(contenido);
     }
     // </editor-fold>
 }
