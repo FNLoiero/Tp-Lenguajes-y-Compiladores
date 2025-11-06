@@ -11,6 +11,7 @@ import lyc.compiler.model.Symbol;
 
 public class AsmCodeGenerator implements FileGenerator {
 
+    //region Campos y Variables
     private static NodoArbol arbolSintactico;
     private StringBuilder codigoAsm;
     private StringBuilder seccionData;
@@ -18,7 +19,11 @@ public class AsmCodeGenerator implements FileGenerator {
     private int contadorTemporales;
     private Set<String> stringsGenerados;
     private Set<String> temporalesDeclaradas;
+    private HashMap<String, String> constantesString; // Mapa: contenido -> nombre generado
+    private String nombreAux; // Nombre de la variable auxiliar con hash
+    //endregion
 
+    //region Métodos Públicos
     public static void setArbolSintactico(NodoArbol arbol) {
         arbolSintactico = arbol;
     }
@@ -36,6 +41,9 @@ public class AsmCodeGenerator implements FileGenerator {
         contadorTemporales = 0;
         stringsGenerados = new HashSet<>();
         temporalesDeclaradas = new HashSet<>();
+        constantesString = new HashMap<>();
+        // Generar nombre único para variable auxiliar con hash
+        nombreAux = "_Aux_" + Math.abs("aux".hashCode());
 
         // Primera pasada: generar sección .DATA inicial (solo tabla de símbolos)
         generarSeccionData();
@@ -73,7 +81,9 @@ public class AsmCodeGenerator implements FileGenerator {
 
         fileWriter.write(codigoAsm.toString());
     }
+    //endregion
 
+    //region Generación de Encabezado y Sección .DATA
     private void generarEncabezado() {
         codigoAsm.append("include macros.asm\n");
         codigoAsm.append("include macros2.asm\n");        
@@ -104,28 +114,18 @@ public class AsmCodeGenerator implements FileGenerator {
         // Generar constantes string (CTE_CADENA)
         for (Symbol symbol : tabla.values()) {
             if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {
-                // Limpiar el nombre del símbolo: remover prefijo _ y comillas
-                String nombreLimpio = symbol.nombre.replace("_", "").replace("\"", "");
-                // Si el nombre sigue siendo muy largo o tiene caracteres especiales, usar hash
-                if (nombreLimpio.length() > 20 || !nombreLimpio.matches("^[a-zA-Z0-9_]+$")) {
-                    nombreLimpio = "STR_" + Math.abs(symbol.valor.hashCode());
-                }
-                String nombreStr = "T_" + nombreLimpio;
-                
                 // Limpiar el valor de comillas si las tiene
                 String valor = symbol.valor;
                 if (valor.startsWith("\"") && valor.endsWith("\"")) {
                     valor = valor.substring(1, valor.length() - 1);
                 }
-                int longitud = valor.length();
-                int padding = Math.max(0, 50 - longitud - 2); // 50 es MAXTEXTSIZE, -2 por '$' y espacio
-                seccionData.append("    ").append(nombreStr).append("         db  \"").append(valor).append("\",'$', ")
-                         .append(padding).append(" dup (?)\n");
+                // Usar método centralizado para obtener nombre único
+                obtenerNombreConstanteString(valor);
             }
         }
 
         // Variables auxiliares comunes
-        seccionData.append("    _aux            db  MAXTEXTSIZE dup (?),'$'\n");
+        seccionData.append("    ").append(nombreAux).append("            db  MAXTEXTSIZE dup (?),'$'\n");
         seccionData.append("    _msgOK            db  0DH,0AH,\"Se ejecuto OK\",'$'\n");
     }
 
@@ -138,7 +138,9 @@ public class AsmCodeGenerator implements FileGenerator {
             codigoAsm.append("    ").append(temp).append("         dd  ?\n");
         }
     }
+    //endregion
 
+    //region Generación de Código Principal
     private void generarCodigo(NodoArbol nodo) {
         if (nodo == null) return;
 
@@ -215,7 +217,9 @@ public class AsmCodeGenerator implements FileGenerator {
             generarCodigo(nodo);
         }
     }
+    //endregion
 
+    //region Instrucciones Simples
     private void generarAsignacion(NodoArbol nodo) {
         if (nodo.getLeft() == null) return;
 
@@ -243,6 +247,177 @@ public class AsmCodeGenerator implements FileGenerator {
         }
     }
 
+    private void generarRead(NodoArbol nodo) {
+        if (nodo.getLeft() == null) return;
+
+        String nombreVar = "_" + nodo.getLeft().getValor();
+        String tipoVar = SymbolTableGenerator.GetTipo(nodo.getLeft().getValor());
+
+        if ("Int".equals(tipoVar)) {
+            codigoAsm.append("    GetInteger ").append(nombreVar).append("\n");
+        } else if ("Float".equals(tipoVar)) {
+            codigoAsm.append("    GetFloat ").append(nombreVar).append("\n");
+        } else if ("String".equals(tipoVar)) {
+            codigoAsm.append("    getString ").append(nombreVar).append("\n");
+        }
+    }
+
+    private void generarWrite(NodoArbol nodo) {
+        if (nodo.getLeft() == null) return;
+
+        NodoArbol param = nodo.getLeft();
+        String valor = param.getValor();
+
+        if (param.esHoja()) {
+            if (valor.startsWith("\"") && valor.endsWith("\"")) {
+                // Es un string literal
+                String nombreStr = generarStringLiteral(valor);
+                codigoAsm.append("    displayString ").append(nombreStr).append("\n");
+            } else {
+                // Es una variable
+                String nombreVar = "_" + valor;
+                String tipoVar = SymbolTableGenerator.GetTipo(valor);
+                
+                if ("Int".equals(tipoVar)) {
+                    codigoAsm.append("    DisplayInteger ").append(nombreVar).append("\n");
+                } else if ("Float".equals(tipoVar)) {
+                    codigoAsm.append("    DisplayFloat ").append(nombreVar).append(", 2\n");
+                } else if ("String".equals(tipoVar)) {
+                    codigoAsm.append("    displayString ").append(nombreVar).append("\n");
+                }
+            }
+        }
+        codigoAsm.append("    newLine 1\n");
+    }
+    //endregion
+
+    //region Estructuras de Control
+    private void generarIf(NodoArbol nodo) {
+        if (nodo.getLeft() == null) return;
+
+        int etiquetaIf = contadorEtiquetas++;
+        int etiquetaElse = contadorEtiquetas++;
+        int etiquetaEnd = contadorEtiquetas++;
+
+        // Generar condición
+        NodoArbol condicion = nodo.getLeft().getLeft();
+        generarCondicion(condicion, "ET_IF_" + etiquetaIf, "ET_ELSE_" + etiquetaElse);
+
+        // Código del if
+        codigoAsm.append("ET_IF_").append(etiquetaIf).append(":\n");
+        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
+            generarCodigo(nodo.getRight().getLeft());
+        }
+        codigoAsm.append("    JMP ET_END_").append(etiquetaEnd).append("\n");
+
+        // Código del else (si existe)
+        codigoAsm.append("ET_ELSE_").append(etiquetaElse).append(":\n");
+        if (nodo.getRight() != null && nodo.getRight().getRight() != null) {
+            generarCodigo(nodo.getRight().getRight());
+        }
+
+        codigoAsm.append("ET_END_").append(etiquetaEnd).append(":\n");
+    }
+
+    private void generarWhile(NodoArbol nodo) {
+        if (nodo.getLeft() == null) return;
+
+        int etiquetaInicio = contadorEtiquetas++;
+        int etiquetaEnd = contadorEtiquetas++;
+
+        codigoAsm.append("ET_WHILE_").append(etiquetaInicio).append(":\n");
+
+        // Generar condición
+        NodoArbol condicion = nodo.getLeft().getLeft();
+        generarCondicion(condicion, "ET_WHILE_BODY_" + etiquetaInicio, "ET_WHILE_END_" + etiquetaEnd);
+
+        // Código del cuerpo
+        codigoAsm.append("ET_WHILE_BODY_").append(etiquetaInicio).append(":\n");
+        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
+            generarCodigo(nodo.getRight().getLeft());
+        }
+        codigoAsm.append("    JMP ET_WHILE_").append(etiquetaInicio).append("\n");
+
+        codigoAsm.append("ET_WHILE_END_").append(etiquetaEnd).append(":\n");
+    }
+
+    private void generarCondicion(NodoArbol nodo, String etiquetaTrue, String etiquetaFalse) {
+        if (nodo == null) return;
+
+        String valor = nodo.getValor();
+
+        if ("NOT".equals(valor)) {
+            // Invertir etiquetas
+            generarCondicion(nodo.getLeft(), etiquetaFalse, etiquetaTrue);
+            return;
+        }
+
+        if ("AND".equals(valor)) {
+            int etiquetaIntermedia = contadorEtiquetas++;
+            generarCondicion(nodo.getLeft(), "ET_AND_" + etiquetaIntermedia, etiquetaFalse);
+            codigoAsm.append("ET_AND_").append(etiquetaIntermedia).append(":\n");
+            generarCondicion(nodo.getRight(), etiquetaTrue, etiquetaFalse);
+            return;
+        }
+
+        if ("OR".equals(valor)) {
+            int etiquetaIntermedia = contadorEtiquetas++;
+            generarCondicion(nodo.getLeft(), etiquetaTrue, "ET_OR_" + etiquetaIntermedia);
+            codigoAsm.append("ET_OR_").append(etiquetaIntermedia).append(":\n");
+            generarCondicion(nodo.getRight(), etiquetaTrue, etiquetaFalse);
+            return;
+        }
+
+        if ("IS_ZERO".equals(valor)) {
+            String expr = generarExpresion(nodo.getLeft(), "Int");
+            codigoAsm.append("    cmp ").append(expr).append(", 0\n");
+            codigoAsm.append("    je ").append(etiquetaTrue).append("\n");
+            codigoAsm.append("    jmp ").append(etiquetaFalse).append("\n");
+            return;
+        }
+
+        if ("<".equals(valor) || ">".equals(valor)) {
+            String left = generarExpresion(nodo.getLeft(), "Int");
+            String right = generarExpresion(nodo.getRight(), "Int");
+
+            // Verificar si son float
+            String tipo = SymbolTableGenerator.GetTipo(left.replace("_", ""));
+            if (tipo != null && "Float".equals(tipo)) {
+                // Comparación de float
+                codigoAsm.append("    fld ").append(left).append("\n");
+                codigoAsm.append("    fld ").append(right).append("\n");
+                codigoAsm.append("    fxch\n");
+                codigoAsm.append("    fcomp\n");
+                codigoAsm.append("    fstsw ax\n");
+                codigoAsm.append("    ffree st(0)\n");
+                codigoAsm.append("    sahf\n");
+                if (">".equals(valor)) {
+                    codigoAsm.append("    JBE ").append(etiquetaFalse).append("\n");
+                } else {
+                    codigoAsm.append("    JAE ").append(etiquetaFalse).append("\n");
+                }
+            } else {
+                // Comparación de enteros
+                codigoAsm.append("    mov eax, ").append(left).append("\n");
+                codigoAsm.append("    cmp eax, ").append(right).append("\n");
+                if (">".equals(valor)) {
+                    codigoAsm.append("    jle ").append(etiquetaFalse).append("\n");
+                } else {
+                    codigoAsm.append("    jge ").append(etiquetaFalse).append("\n");
+                }
+            }
+            codigoAsm.append("    jmp ").append(etiquetaTrue).append("\n");
+            return;
+        }
+
+        // Si no es ninguna condición conocida, procesar recursivamente
+        if (nodo.getLeft() != null) {
+            generarCondicion(nodo.getLeft(), etiquetaTrue, etiquetaFalse);
+        }
+    }
+    //endregion
+
+    //region Generación de Expresiones
     private String generarExpresion(NodoArbol nodo, String tipoEsperado) {
         if (nodo == null) return "";
 
@@ -382,42 +557,6 @@ public class AsmCodeGenerator implements FileGenerator {
         return tempVar;
     }
 
-    private String obtenerTipoVariable(String nombreVar) {
-        // Si es una variable temporal, no buscar en tabla de símbolos
-        if (nombreVar.startsWith("_temp") || nombreVar.startsWith("_temp_lit_") || nombreVar.startsWith("_float_lit_")) {
-            // Variables temporales son enteros por defecto, a menos que contengan un punto
-            if (nombreVar.contains("float")) {
-                return "Float";
-            }
-            return "Int";
-        }
-        
-        // Remover prefijo _
-        String nombre = nombreVar.startsWith("_") ? nombreVar.substring(1) : nombreVar;
-        try {
-            return SymbolTableGenerator.GetTipo(nombre);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String generarStringLiteral(String valor) {
-        // Quitar comillas
-        String contenido = valor.substring(1, valor.length() - 1);
-        String nombreStr = "T_LITERAL_" + Math.abs(contenido.hashCode());
-        
-        if (!stringsGenerados.contains(nombreStr)) {
-            stringsGenerados.add(nombreStr);
-            // Agregar al .DATA
-            int longitud = contenido.length();
-            int padding = Math.max(0, 50 - longitud - 2);
-            seccionData.append("    ").append(nombreStr).append("         db  \"").append(contenido)
-                      .append("\",'$', ").append(padding).append(" dup (?)\n");
-        }
-        
-        return nombreStr;
-    }
-
     private String generarEqualExpressions(NodoArbol nodo) {
         // Equal expressions retorna un valor que indica si todas las expresiones son iguales
         String tempVar = "_temp" + (contadorTemporales++);
@@ -458,171 +597,64 @@ public class AsmCodeGenerator implements FileGenerator {
         
         return tempVar;
     }
+    //endregion
 
-    private void generarRead(NodoArbol nodo) {
-        if (nodo.getLeft() == null) return;
-
-        String nombreVar = "_" + nodo.getLeft().getValor();
-        String tipoVar = SymbolTableGenerator.GetTipo(nodo.getLeft().getValor());
-
-        if ("Int".equals(tipoVar)) {
-            codigoAsm.append("    GetInteger ").append(nombreVar).append("\n");
-        } else if ("Float".equals(tipoVar)) {
-            codigoAsm.append("    GetFloat ").append(nombreVar).append("\n");
-        } else if ("String".equals(tipoVar)) {
-            codigoAsm.append("    getString ").append(nombreVar).append("\n");
-        }
-    }
-
-    private void generarWrite(NodoArbol nodo) {
-        if (nodo.getLeft() == null) return;
-
-        NodoArbol param = nodo.getLeft();
-        String valor = param.getValor();
-
-        if (param.esHoja()) {
-            if (valor.startsWith("\"") && valor.endsWith("\"")) {
-                // Es un string literal
-                String nombreStr = generarStringLiteral(valor);
-                codigoAsm.append("    displayString ").append(nombreStr).append("\n");
-            } else {
-                // Es una variable
-                String nombreVar = "_" + valor;
-                String tipoVar = SymbolTableGenerator.GetTipo(valor);
-                
-                if ("Int".equals(tipoVar)) {
-                    codigoAsm.append("    DisplayInteger ").append(nombreVar).append("\n");
-                } else if ("Float".equals(tipoVar)) {
-                    codigoAsm.append("    DisplayFloat ").append(nombreVar).append(", 2\n");
-                } else if ("String".equals(tipoVar)) {
-                    codigoAsm.append("    displayString ").append(nombreVar).append("\n");
-                }
+    //region Utilidades
+    private String obtenerTipoVariable(String nombreVar) {
+        // Si es una variable temporal, no buscar en tabla de símbolos
+        if (nombreVar.startsWith("_temp") || nombreVar.startsWith("_temp_lit_") || nombreVar.startsWith("_float_lit_")) {
+            // Variables temporales son enteros por defecto, a menos que contengan un punto
+            if (nombreVar.contains("float")) {
+                return "Float";
             }
+            return "Int";
         }
-        codigoAsm.append("    newLine 1\n");
-    }
-
-    private void generarIf(NodoArbol nodo) {
-        if (nodo.getLeft() == null) return;
-
-        int etiquetaIf = contadorEtiquetas++;
-        int etiquetaElse = contadorEtiquetas++;
-        int etiquetaEnd = contadorEtiquetas++;
-
-        // Generar condición
-        NodoArbol condicion = nodo.getLeft().getLeft();
-        generarCondicion(condicion, "ET_IF_" + etiquetaIf, "ET_ELSE_" + etiquetaElse);
-
-        // Código del if
-        codigoAsm.append("ET_IF_").append(etiquetaIf).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
-            generarCodigo(nodo.getRight().getLeft());
-        }
-        codigoAsm.append("    JMP ET_END_").append(etiquetaEnd).append("\n");
-
-        // Código del else (si existe)
-        codigoAsm.append("ET_ELSE_").append(etiquetaElse).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getRight() != null) {
-            generarCodigo(nodo.getRight().getRight());
-        }
-
-        codigoAsm.append("ET_END_").append(etiquetaEnd).append(":\n");
-    }
-
-    private void generarWhile(NodoArbol nodo) {
-        if (nodo.getLeft() == null) return;
-
-        int etiquetaInicio = contadorEtiquetas++;
-        int etiquetaEnd = contadorEtiquetas++;
-
-        codigoAsm.append("ET_WHILE_").append(etiquetaInicio).append(":\n");
-
-        // Generar condición
-        NodoArbol condicion = nodo.getLeft().getLeft();
-        generarCondicion(condicion, "ET_WHILE_BODY_" + etiquetaInicio, "ET_WHILE_END_" + etiquetaEnd);
-
-        // Código del cuerpo
-        codigoAsm.append("ET_WHILE_BODY_").append(etiquetaInicio).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
-            generarCodigo(nodo.getRight().getLeft());
-        }
-        codigoAsm.append("    JMP ET_WHILE_").append(etiquetaInicio).append("\n");
-
-        codigoAsm.append("ET_WHILE_END_").append(etiquetaEnd).append(":\n");
-    }
-
-    private void generarCondicion(NodoArbol nodo, String etiquetaTrue, String etiquetaFalse) {
-        if (nodo == null) return;
-
-        String valor = nodo.getValor();
-
-        if ("NOT".equals(valor)) {
-            // Invertir etiquetas
-            generarCondicion(nodo.getLeft(), etiquetaFalse, etiquetaTrue);
-            return;
-        }
-
-        if ("AND".equals(valor)) {
-            int etiquetaIntermedia = contadorEtiquetas++;
-            generarCondicion(nodo.getLeft(), "ET_AND_" + etiquetaIntermedia, etiquetaFalse);
-            codigoAsm.append("ET_AND_").append(etiquetaIntermedia).append(":\n");
-            generarCondicion(nodo.getRight(), etiquetaTrue, etiquetaFalse);
-            return;
-        }
-
-        if ("OR".equals(valor)) {
-            int etiquetaIntermedia = contadorEtiquetas++;
-            generarCondicion(nodo.getLeft(), etiquetaTrue, "ET_OR_" + etiquetaIntermedia);
-            codigoAsm.append("ET_OR_").append(etiquetaIntermedia).append(":\n");
-            generarCondicion(nodo.getRight(), etiquetaTrue, etiquetaFalse);
-            return;
-        }
-
-        if ("IS_ZERO".equals(valor)) {
-            String expr = generarExpresion(nodo.getLeft(), "Int");
-            codigoAsm.append("    cmp ").append(expr).append(", 0\n");
-            codigoAsm.append("    je ").append(etiquetaTrue).append("\n");
-            codigoAsm.append("    jmp ").append(etiquetaFalse).append("\n");
-            return;
-        }
-
-        if ("<".equals(valor) || ">".equals(valor)) {
-            String left = generarExpresion(nodo.getLeft(), "Int");
-            String right = generarExpresion(nodo.getRight(), "Int");
-
-            // Verificar si son float
-            String tipo = SymbolTableGenerator.GetTipo(left.replace("_", ""));
-            if (tipo != null && "Float".equals(tipo)) {
-                // Comparación de float
-                codigoAsm.append("    fld ").append(left).append("\n");
-                codigoAsm.append("    fld ").append(right).append("\n");
-                codigoAsm.append("    fxch\n");
-                codigoAsm.append("    fcomp\n");
-                codigoAsm.append("    fstsw ax\n");
-                codigoAsm.append("    ffree st(0)\n");
-                codigoAsm.append("    sahf\n");
-                if (">".equals(valor)) {
-                    codigoAsm.append("    JBE ").append(etiquetaFalse).append("\n");
-                } else {
-                    codigoAsm.append("    JAE ").append(etiquetaFalse).append("\n");
-                }
-            } else {
-                // Comparación de enteros
-                codigoAsm.append("    mov eax, ").append(left).append("\n");
-                codigoAsm.append("    cmp eax, ").append(right).append("\n");
-                if (">".equals(valor)) {
-                    codigoAsm.append("    jle ").append(etiquetaFalse).append("\n");
-                } else {
-                    codigoAsm.append("    jge ").append(etiquetaFalse).append("\n");
-                }
-            }
-            codigoAsm.append("    jmp ").append(etiquetaTrue).append("\n");
-            return;
-        }
-
-        // Si no es ninguna condición conocida, procesar recursivamente
-        if (nodo.getLeft() != null) {
-            generarCondicion(nodo.getLeft(), etiquetaTrue, etiquetaFalse);
+        
+        // Remover prefijo _
+        String nombre = nombreVar.startsWith("_") ? nombreVar.substring(1) : nombreVar;
+        try {
+            return SymbolTableGenerator.GetTipo(nombre);
+        } catch (Exception e) {
+            return null;
         }
     }
+
+    /**
+     * Obtiene el nombre de una constante string. Si ya existe, devuelve el nombre existente.
+     * Si no existe, lo genera y lo declara en .DATA usando formato CTE_CADENA_ + hash.
+     * 
+     * @param contenido Contenido del string sin comillas
+     * @return Nombre de la constante generada (formato: CTE_CADENA_ + hash)
+     */
+    private String obtenerNombreConstanteString(String contenido) {
+        // Si ya existe, devolver el nombre existente
+        if (constantesString.containsKey(contenido)) {
+            return constantesString.get(contenido);
+        }
+        
+        // Generar nuevo nombre con formato CTE_CADENA_ + hash
+        String nombreStr = "CTE_CADENA_" + Math.abs(contenido.hashCode());
+        
+        // Guardar en el mapa para evitar duplicados
+        constantesString.put(contenido, nombreStr);
+        
+        // Declarar en .DATA solo una vez
+        if (!stringsGenerados.contains(nombreStr)) {
+            stringsGenerados.add(nombreStr);
+            int longitud = contenido.length();
+            int padding = Math.max(0, 50 - longitud - 2); // 50 es MAXTEXTSIZE, -2 por '$' y espacio
+            seccionData.append("    ").append(nombreStr).append("         db  \"").append(contenido)
+                      .append("\",'$', ").append(padding).append(" dup (?)\n");
+        }
+        
+        return nombreStr;
+    }
+
+    private String generarStringLiteral(String valor) {
+        // Quitar comillas
+        String contenido = valor.substring(1, valor.length() - 1);
+        // Usar método centralizado
+        return obtenerNombreConstanteString(contenido);
+    }
+    //endregion
 }

@@ -21,23 +21,17 @@ h := 16
 mensaje1 := "Bienvenido al programa"
 mensaje2 := "Ejecutando codigo..."
 mensaje3 := "Procesando datos"
-mensaje4 := "Operaciones completas"
 
 #+ WRITE con strings constantes +#
 write("Aca se comienza la gran")
 write("ejecucion del gran codigo")
 write("programado - Lenguajes y")
 write("compiladores - Ano 2025")
-write("Integrantes:")
-write("Lautaro Marino")
-write("Federico Loiero")
-write("Federico")
 
 #+ WRITE con variables string +#
 write(mensaje1)
 write(mensaje2)
 write(mensaje3)
-write(mensaje4)
 
 #+ IF +#
 if (num1 > num5)
@@ -162,7 +156,6 @@ else
 {
     write("num5 = num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
-
 
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
 #+ 1. Error de string, el literal no está cerrado correctamente. +#
