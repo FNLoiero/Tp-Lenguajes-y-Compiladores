@@ -11,7 +11,7 @@ import lyc.compiler.model.Symbol;
 
 public class AsmCodeGenerator implements FileGenerator {
 
-    //region Campos y Variables
+    // <editor-fold desc="Campos y Variables">
     private static NodoArbol arbolSintactico;
     private StringBuilder codigoAsm;
     private StringBuilder seccionData;
@@ -19,11 +19,10 @@ public class AsmCodeGenerator implements FileGenerator {
     private int contadorTemporales;
     private Set<String> stringsGenerados;
     private Set<String> temporalesDeclaradas;
-    private HashMap<String, String> constantesString; // Mapa: contenido -> nombre generado
-    private String nombreAux; // Nombre de la variable auxiliar con hash
-    //endregion
+    private HashMap<String, String> constantesString; 
+    // </editor-fold>
 
-    //region Métodos Públicos
+    // <editor-fold desc="Métodos Públicos">
     public static void setArbolSintactico(NodoArbol arbol) {
         arbolSintactico = arbol;
     }
@@ -42,16 +41,13 @@ public class AsmCodeGenerator implements FileGenerator {
         stringsGenerados = new HashSet<>();
         temporalesDeclaradas = new HashSet<>();
         constantesString = new HashMap<>();
-        // Generar nombre único para variable auxiliar con hash
-        nombreAux = "_Aux_" + Math.abs("aux".hashCode());
-
-        // Primera pasada: generar sección .DATA inicial (solo tabla de símbolos)
+        
         generarSeccionData();
 
-        // Guardar referencia temporal para el código
+        
         StringBuilder codigoTemp = new StringBuilder();
         StringBuilder codigoAsmOriginal = codigoAsm;
-        codigoAsm = codigoTemp; // Usar temporal para generar código
+        codigoAsm = codigoTemp; 
         
         // Generar código del programa recorriendo el árbol (esto puede generar más temporales y literales)
         generarCodigo(arbolSintactico);
@@ -81,9 +77,9 @@ public class AsmCodeGenerator implements FileGenerator {
 
         fileWriter.write(codigoAsm.toString());
     }
-    //endregion
+    // </editor-fold>
 
-    //region Generación de Encabezado y Sección .DATA
+    // <editor-fold desc="Sección .DATA">
     private void generarEncabezado() {
         codigoAsm.append("include macros.asm\n");
         codigoAsm.append("include macros2.asm\n");        
@@ -100,14 +96,13 @@ public class AsmCodeGenerator implements FileGenerator {
         // Primero, generar variables declaradas (ID con tipo)
         for (Symbol symbol : tabla.values()) {
             if (symbol.tipoDato != null && !symbol.tipoDato.isEmpty() && 
-                !symbol.tipoDato.equals("CTE_CADENA") && !symbol.nombre.startsWith("_")) {
-                // Variable declarada
+                !symbol.tipoDato.equals("CTE_CADENA") && !symbol.nombre.startsWith("_")) {                
                 String nombreVar = "_" + symbol.nombre;
-                if ("Int".equals(symbol.tipoDato) || "Float".equals(symbol.tipoDato)) {
+                if ("Int".equals(symbol.tipoDato) || "Float".equals(symbol.tipoDato))
                     seccionData.append("    ").append(nombreVar).append("         dd  ?\n");
-                } else if ("String".equals(symbol.tipoDato)) {
+                else if ("String".equals(symbol.tipoDato))
                     seccionData.append("    ").append(nombreVar).append("         db  MAXTEXTSIZE dup (?),'$'\n");
-                }
+                
             }
         }
 
@@ -116,16 +111,13 @@ public class AsmCodeGenerator implements FileGenerator {
             if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {
                 // Limpiar el valor de comillas si las tiene
                 String valor = symbol.valor;
-                if (valor.startsWith("\"") && valor.endsWith("\"")) {
+                if (valor.startsWith("\"") && valor.endsWith("\""))
                     valor = valor.substring(1, valor.length() - 1);
-                }
                 // Usar método centralizado para obtener nombre único
                 obtenerNombreConstanteString(valor);
             }
-        }
-
-        // Variables auxiliares comunes
-        seccionData.append("    ").append(nombreAux).append("            db  MAXTEXTSIZE dup (?),'$'\n");
+        }        
+        
         seccionData.append("    _msgOK            db  0DH,0AH,\"Se ejecuto OK\",'$'\n");
     }
 
@@ -138,9 +130,9 @@ public class AsmCodeGenerator implements FileGenerator {
             codigoAsm.append("    ").append(temp).append("         dd  ?\n");
         }
     }
-    //endregion
+    // </editor-fold>
 
-    //region Generación de Código Principal
+    // <editor-fold desc="Generación de Código Principal">
     private void generarCodigo(NodoArbol nodo) {
         if (nodo == null) return;
 
@@ -149,19 +141,16 @@ public class AsmCodeGenerator implements FileGenerator {
         switch (valor) {
             case "Programa":
                 // Procesar serie de instrucciones
-                if (nodo.getLeft() != null) {
+                if (nodo.getLeft() != null)
                     generarSerieInstrucciones(nodo.getLeft());
-                }
                 break;
 
             case "instrucción":
                 // Serie de instrucciones
-                if (nodo.getLeft() != null) {
+                if (nodo.getLeft() != null)
                     generarCodigo(nodo.getLeft());
-                }
-                if (nodo.getRight() != null) {
+                if (nodo.getRight() != null)
                     generarCodigo(nodo.getRight());
-                }
                 break;
 
             case ":=":
@@ -193,12 +182,10 @@ public class AsmCodeGenerator implements FileGenerator {
 
             default:
                 // Procesar hijos si existen
-                if (nodo.getLeft() != null) {
+                if (nodo.getLeft() != null)
                     generarCodigo(nodo.getLeft());
-                }
-                if (nodo.getRight() != null) {
+                if (nodo.getRight() != null)
                     generarCodigo(nodo.getRight());
-                }
                 break;
         }
     }
@@ -207,19 +194,16 @@ public class AsmCodeGenerator implements FileGenerator {
         if (nodo == null) return;
 
         if ("instrucción".equals(nodo.getValor())) {
-            if (nodo.getLeft() != null) {
+            if (nodo.getLeft() != null)
                 generarCodigo(nodo.getLeft());
-            }
-            if (nodo.getRight() != null) {
+            if (nodo.getRight() != null)
                 generarCodigo(nodo.getRight());
-            }
-        } else {
+        } else
             generarCodigo(nodo);
-        }
     }
-    //endregion
+    // </editor-fold>
 
-    //region Instrucciones Simples
+    // <editor-fold desc="Instrucciones Simples">
     private void generarAsignacion(NodoArbol nodo) {
         if (nodo.getLeft() == null) return;
 
@@ -253,13 +237,12 @@ public class AsmCodeGenerator implements FileGenerator {
         String nombreVar = "_" + nodo.getLeft().getValor();
         String tipoVar = SymbolTableGenerator.GetTipo(nodo.getLeft().getValor());
 
-        if ("Int".equals(tipoVar)) {
+        if ("Int".equals(tipoVar))
             codigoAsm.append("    GetInteger ").append(nombreVar).append("\n");
-        } else if ("Float".equals(tipoVar)) {
+        else if ("Float".equals(tipoVar))
             codigoAsm.append("    GetFloat ").append(nombreVar).append("\n");
-        } else if ("String".equals(tipoVar)) {
+        else if ("String".equals(tipoVar))
             codigoAsm.append("    getString ").append(nombreVar).append("\n");
-        }
     }
 
     private void generarWrite(NodoArbol nodo) {
@@ -278,20 +261,19 @@ public class AsmCodeGenerator implements FileGenerator {
                 String nombreVar = "_" + valor;
                 String tipoVar = SymbolTableGenerator.GetTipo(valor);
                 
-                if ("Int".equals(tipoVar)) {
+                if ("Int".equals(tipoVar))
                     codigoAsm.append("    DisplayInteger ").append(nombreVar).append("\n");
-                } else if ("Float".equals(tipoVar)) {
+                else if ("Float".equals(tipoVar))
                     codigoAsm.append("    DisplayFloat ").append(nombreVar).append(", 2\n");
-                } else if ("String".equals(tipoVar)) {
+                else if ("String".equals(tipoVar))
                     codigoAsm.append("    displayString ").append(nombreVar).append("\n");
-                }
             }
         }
         codigoAsm.append("    newLine 1\n");
     }
-    //endregion
+    // </editor-fold>
 
-    //region Estructuras de Control
+    // <editor-fold desc="Estructuras de Control">
     private void generarIf(NodoArbol nodo) {
         if (nodo.getLeft() == null) return;
 
@@ -305,16 +287,14 @@ public class AsmCodeGenerator implements FileGenerator {
 
         // Código del if
         codigoAsm.append("ET_IF_").append(etiquetaIf).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
+        if (nodo.getRight() != null && nodo.getRight().getLeft() != null)
             generarCodigo(nodo.getRight().getLeft());
-        }
         codigoAsm.append("    JMP ET_END_").append(etiquetaEnd).append("\n");
 
         // Código del else (si existe)
         codigoAsm.append("ET_ELSE_").append(etiquetaElse).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getRight() != null) {
+        if (nodo.getRight() != null && nodo.getRight().getRight() != null)
             generarCodigo(nodo.getRight().getRight());
-        }
 
         codigoAsm.append("ET_END_").append(etiquetaEnd).append(":\n");
     }
@@ -333,9 +313,8 @@ public class AsmCodeGenerator implements FileGenerator {
 
         // Código del cuerpo
         codigoAsm.append("ET_WHILE_BODY_").append(etiquetaInicio).append(":\n");
-        if (nodo.getRight() != null && nodo.getRight().getLeft() != null) {
+        if (nodo.getRight() != null && nodo.getRight().getLeft() != null)
             generarCodigo(nodo.getRight().getLeft());
-        }
         codigoAsm.append("    JMP ET_WHILE_").append(etiquetaInicio).append("\n");
 
         codigoAsm.append("ET_WHILE_END_").append(etiquetaEnd).append(":\n");
@@ -391,33 +370,30 @@ public class AsmCodeGenerator implements FileGenerator {
                 codigoAsm.append("    fstsw ax\n");
                 codigoAsm.append("    ffree st(0)\n");
                 codigoAsm.append("    sahf\n");
-                if (">".equals(valor)) {
+                if (">".equals(valor))
                     codigoAsm.append("    JBE ").append(etiquetaFalse).append("\n");
-                } else {
+                else
                     codigoAsm.append("    JAE ").append(etiquetaFalse).append("\n");
-                }
             } else {
                 // Comparación de enteros
                 codigoAsm.append("    mov eax, ").append(left).append("\n");
                 codigoAsm.append("    cmp eax, ").append(right).append("\n");
-                if (">".equals(valor)) {
+                if (">".equals(valor))
                     codigoAsm.append("    jle ").append(etiquetaFalse).append("\n");
-                } else {
+                else
                     codigoAsm.append("    jge ").append(etiquetaFalse).append("\n");
-                }
             }
             codigoAsm.append("    jmp ").append(etiquetaTrue).append("\n");
             return;
         }
 
         // Si no es ninguna condición conocida, procesar recursivamente
-        if (nodo.getLeft() != null) {
+        if (nodo.getLeft() != null)
             generarCondicion(nodo.getLeft(), etiquetaTrue, etiquetaFalse);
-        }
     }
-    //endregion
+    // </editor-fold>
 
-    //region Generación de Expresiones
+    // <editor-fold desc="Generación de Expresiones">
     private String generarExpresion(NodoArbol nodo, String tipoEsperado) {
         if (nodo == null) return "";
 
@@ -453,14 +429,12 @@ public class AsmCodeGenerator implements FileGenerator {
                 // Es una variable - verificar que existe en la tabla de símbolos
                 try {
                     String tipo = SymbolTableGenerator.GetTipo(valor);
-                    if (tipo == null || tipo.isEmpty()) {
+                    if (tipo == null || tipo.isEmpty())
                         throw new RuntimeException("Error: variable '" + valor + "' no declarada en la generación de código.");
-                    }
                 } catch (RuntimeException e) {
                     // Si la excepción menciona "no encontrado", es una variable no declarada
-                    if (e.getMessage().contains("no encontrado")) {
+                    if (e.getMessage().contains("no encontrado"))
                         throw new RuntimeException("Error: variable '" + valor + "' no declarada. Asegúrate de declarar todas las variables en el bloque INIT.");
-                    }
                     throw e;
                 }
                 return "_" + valor;
@@ -483,9 +457,8 @@ public class AsmCodeGenerator implements FileGenerator {
                 return generarIsZero(nodo);
             default:
                 // Procesar recursivamente
-                if (nodo.getLeft() != null) {
+                if (nodo.getLeft() != null)
                     return generarExpresion(nodo.getLeft(), tipoEsperado);
-                }
                 return "";
         }
     }
@@ -597,9 +570,9 @@ public class AsmCodeGenerator implements FileGenerator {
         
         return tempVar;
     }
-    //endregion
+    // </editor-fold>
 
-    //region Utilidades
+    // <editor-fold desc="Utilidades">
     private String obtenerTipoVariable(String nombreVar) {
         // Si es una variable temporal, no buscar en tabla de símbolos
         if (nombreVar.startsWith("_temp") || nombreVar.startsWith("_temp_lit_") || nombreVar.startsWith("_float_lit_")) {
@@ -628,9 +601,8 @@ public class AsmCodeGenerator implements FileGenerator {
      */
     private String obtenerNombreConstanteString(String contenido) {
         // Si ya existe, devolver el nombre existente
-        if (constantesString.containsKey(contenido)) {
+        if (constantesString.containsKey(contenido))
             return constantesString.get(contenido);
-        }
         
         // Generar nuevo nombre con formato CTE_CADENA_ + hash
         String nombreStr = "CTE_CADENA_" + Math.abs(contenido.hashCode());
@@ -656,5 +628,5 @@ public class AsmCodeGenerator implements FileGenerator {
         // Usar método centralizado
         return obtenerNombreConstanteString(contenido);
     }
-    //endregion
+    // </editor-fold>
 }
