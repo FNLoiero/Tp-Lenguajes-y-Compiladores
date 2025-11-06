@@ -1,109 +1,166 @@
 init {
     a, b, d, z, e : Float
-    c1, c2, c3, x, c , s, h ,contador: Int
-    b, base, y : String
+    c1, c2, c3, x, c, s, h, contador, num1, num2, num3, num4, num5, num6, valor1, valor2, valor3 : Int
+    base, y, mensaje1, mensaje2, mensaje3, mensaje4 : String
 }
 
-a := 99999.99
-b := "@sdADaSjfla%dfg"
-b := "asldk  fh sjf"
-c1 := 10
-c2 := 456
-x := 27 - c1
-x := c1 + 500
-x := c1 * c3
-d := a / z
-c := d * (e - 21) / 4
+#+ Inicializacion de variables con valores simples +#
+num1 := 5
+num2 := 10
+num3 := 15
+num4 := 20
+num5 := 3
+num6 := 7
+valor1 := 100
+valor2 := 50
+contador := 0
+s := 1
+h := 16
 
-#+ “ewr” es una cte string +#
-write("ewr")
-write(b)
-read(base)
+#+ Inicializacion de variables string +#
+mensaje1 := "Bienvenido al programa"
+mensaje2 := "Ejecutando codigo..."
+mensaje3 := "Procesando datos"
+mensaje4 := "Operaciones completas"
 
-#+ “ewr” es una cte string +#
-if (c1 > c2)
+#+ WRITE con strings constantes +#
+write("Aca se comienza la gran")
+write("ejecucion del gran codigo")
+write("programado - Lenguajes y")
+write("compiladores - Ano 2025")
+write("Integrantes:")
+write("Lautaro Marino")
+write("Federico Loiero")
+write("Federico")
+
+#+ WRITE con variables string +#
+write(mensaje1)
+write(mensaje2)
+write(mensaje3)
+write(mensaje4)
+
+#+ IF +#
+if (num1 > num5)
 {
-    write("c1 es mas grande que c2")
+    write("num1 > num5") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
-if (c1 > c2)
+if (num2 < num1)
 {
-    write("c1 es mas grande que c2")
+    write("num2 < num1")
 }
-else
+
+if (num1 > num5 AND num3 > num2)
 {
-    write("c1 es mas chico o igual a c2")
+    write("AND: ambas verdaderas") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
-#+ “ewr” es una cte string +#
-
-if (c1 > c2 AND c3 > c2)
+if (num2 > num4 AND num3 > num2)
 {
-    #+ “ewr” es una cte string +#
-    write("c1 > c2 AND c3 > c2")
+    write("AND: una falsa")
 }
 
-if (c1 > c2 OR c3 > c2)
+if (num1 > num4 OR num3 > num2)
 {
-    #+ “ewr” es una cte string +#
-    write("c1 > c2 o c3 >c2")
+    write("OR: una verdadera") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
-if (NOT c1 > c2)
+if (num1 > num4 OR num2 > num4)
 {
-    write("c1 no es mas grande que c2")
+    write("OR: ambas falsas")
 }
 
-if (c1 > c2 AND c3 > c2)
+if (NOT num1 > num4)
 {
-    write("c1 > c2 AND c3 > c2")
+    write("NOT: condicion verdadera") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
-else
+
+if (num1 + num2 > num6)
 {
-    write("c1 <= c2")
-    write("o c3 es mas chico a c2")
+    write("Expresion: suma > num6") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
-
-if ((8 + 3) > 5+8*6 AND c3 > c2)
+if (num1 * num5 > num4)
 {
-    write("OP compleja - AND")
+    write("Expresion: producto > num4")
 }
 
-if ((8 + 3) > 5+8*6 OR c3 > c2)
-{
-    write("OP compleja - OR")
-}
-
-c1 := 1 #+ “ewr” es una cte string +#
-c2 := 3 #+ “ewr” es una cte string +#
-
-#+ “ewr” es una cte string +#
-
-if(c1 < c2){
-	write("Todavia no se anida")
-}
-else if(c1 > c2){
-	write("Apa, se esta anidando")
-}
-else{
-	write("Funciona el anidamiento")
-}
-
-while (c1 > c2)
-{
-    write("c1 es mas grande que c2")
-    c1 := c1 + 1
-}
-
-while (isZero( contador - 10 ))
-{
-    write("El contador vale 10")
-    contador := contador - 1
-}
 if (isZero( s*7+1-h/2 ))
 {
-    write("La expresion es igual a cero")
+    write("isZero: expresion = 0") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+
+s := 10
+h := 4
+if (isZero( s*7+1-h/2 ))
+{
+    write("isZero: expresion != 0")
+}
+
+if (valor1 > valor2)
+{
+    write("valor1 > valor2") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+
+#+ IF con else +#
+if (num3 > num2)
+{
+    write("num3 > num2") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+else
+{
+    write("num3 <= num2")
+}
+
+if (num4 < valor2)
+{
+    write("num4 < valor2")
+}
+else
+{
+    write("num4 >= valor2") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+
+if (num2 > num1)
+{
+    write("IF: num2 > num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
+    if (num3 > num2)
+    {
+        write("IF anidado: num3 > num2") #+ Se va a ejecutar en la version actual con los datos actuales +#
+    }
+}
+else
+{
+    write("ELSE: num2 <= num1")
+}
+
+
+if (num5 < num1)
+{
+    write("num5 < num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+else if (num5 > num1)
+{
+    write("num5 > num1")
+}
+else
+{
+    write("num5 = num1")
+}
+
+num5 := num1
+
+if (num5 < num1)
+{
+    write("num5 < num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+else if (num5 > num1)
+{
+    write("num5 > num1")
+}
+else
+{
+    write("num5 = num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
 
@@ -140,7 +197,6 @@ if (isZero( s*7+1-h/2 ))
 
 #+ 10. Constante entera fuera de rango +#
 #+ c := "Esto es un string que tiene que superar los cincuenta caracteres de largo." +#
-
 
 #+ 11: Constante cadena excede los 30 caracteres: c1 es mas grande que c2 y c3 es mas grande que c2 +#
 #+ write("c1 es mas grande que c2 y c3 es mas grande que c2") +#
