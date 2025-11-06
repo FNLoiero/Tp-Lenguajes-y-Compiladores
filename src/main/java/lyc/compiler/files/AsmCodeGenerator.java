@@ -17,9 +17,19 @@ public class AsmCodeGenerator implements FileGenerator {
     private StringBuilder seccionData;
     private int contadorEtiquetas;
     private int contadorTemporales;
-    private Set<String> stringsGenerados;
     private Set<String> temporalesDeclaradas;
     private HashMap<String, String> constantesString; 
+    // </editor-fold>
+
+    // <editor-fold desc="Constructor">
+    public AsmCodeGenerator() {
+        codigoAsm = new StringBuilder();
+        seccionData = new StringBuilder();
+        contadorEtiquetas = 0;
+        contadorTemporales = 0;
+        temporalesDeclaradas = new HashSet<>();
+        constantesString = new HashMap<>();
+    }
     // </editor-fold>
 
     // <editor-fold desc="Métodos Públicos">
@@ -34,47 +44,11 @@ public class AsmCodeGenerator implements FileGenerator {
             return;
         }
 
-        codigoAsm = new StringBuilder();
-        seccionData = new StringBuilder();
-        contadorEtiquetas = 0;
-        contadorTemporales = 0;
-        stringsGenerados = new HashSet<>();
-        temporalesDeclaradas = new HashSet<>();
-        constantesString = new HashMap<>();
-        
         generarSeccionData();
-
-        
-        StringBuilder codigoTemp = new StringBuilder();
-        StringBuilder codigoAsmOriginal = codigoAsm;
-        codigoAsm = codigoTemp; 
-        
-        // Generar código del programa recorriendo el árbol (esto puede generar más temporales y literales)
-        generarCodigo(arbolSintactico);
-        
-        // Restaurar codigoAsm y generar archivo completo
-        codigoAsm = codigoAsmOriginal;
+        StringBuilder codigoBody = generarBODY();
         generarEncabezado();
-        generarSeccionDataCompleta();
-        
-        // Generar sección .CODE
-        codigoAsm.append("\n.CODE\n\n");
-        codigoAsm.append("PUBLIC START\n");
-        codigoAsm.append("START:\n");
-        codigoAsm.append("    mov AX,@DATA\n");
-        codigoAsm.append("    mov DS,AX\n");
-        codigoAsm.append("    mov es,ax\n");
-
-        // Agregar el código generado
-        codigoAsm.append(codigoTemp.toString());
-
-        // Generar código de finalización
-        codigoAsm.append("    displayString _msgOK\n");
-        codigoAsm.append("    newLine 1\n");
-        codigoAsm.append("    mov ax, 4C00h\n");
-        codigoAsm.append("    int 21h\n");
-        codigoAsm.append("\nEND START\n");
-
+        IngresarVariablesAuxiliaresDATA();
+        codigoAsm.append(codigoBody.toString());
         fileWriter.write(codigoAsm.toString());
     }
     // </editor-fold>
@@ -92,43 +66,58 @@ public class AsmCodeGenerator implements FileGenerator {
 
     private void generarSeccionData() {
         HashMap<String, Symbol> tabla = SymbolTableGenerator.getTable();
-        
-        // Primero, generar variables declaradas (ID con tipo)
         for (Symbol symbol : tabla.values()) {
-            if (symbol.tipoDato != null && !symbol.tipoDato.isEmpty() && 
-                !symbol.tipoDato.equals("CTE_CADENA") && !symbol.nombre.startsWith("_")) {                
-                String nombreVar = "_" + symbol.nombre;
-                if ("Int".equals(symbol.tipoDato) || "Float".equals(symbol.tipoDato))
-                    seccionData.append("    ").append(nombreVar).append("         dd  ?\n");
-                else if ("String".equals(symbol.tipoDato))
-                    seccionData.append("    ").append(nombreVar).append("         db  MAXTEXTSIZE dup (?),'$'\n");
-                
-            }
-        }
-
-        // Generar constantes string (CTE_CADENA)
-        for (Symbol symbol : tabla.values()) {
-            if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {
-                // Limpiar el valor de comillas si las tiene
-                String valor = symbol.valor;
-                if (valor.startsWith("\"") && valor.endsWith("\""))
-                    valor = valor.substring(1, valor.length() - 1);
-                // Usar método centralizado para obtener nombre único
-                obtenerNombreConstanteString(valor);
+            if (symbol.tipoDato != null && !symbol.tipoDato.isEmpty()) {
+                if ("CTE_CADENA".equals(symbol.tipoDato) && symbol.valor != null && !symbol.valor.isEmpty()) {                    
+                    String valor = symbol.valor;
+                    if (valor.startsWith("\"") && valor.endsWith("\""))
+                        valor = valor.substring(1, valor.length() - 1);                    
+                    agregarVariableDATA(valor);
+                } else if (!symbol.tipoDato.equals("CTE_CADENA") && !symbol.nombre.startsWith("_")) {                    
+                    String nombreVar = "_" + symbol.nombre;
+                    if ("Int".equals(symbol.tipoDato) || "Float".equals(symbol.tipoDato))
+                        seccionData.append("    ").append(nombreVar).append("         dd  ?\n");
+                    else if ("String".equals(symbol.tipoDato))
+                        seccionData.append("    ").append(nombreVar).append("         db  MAXTEXTSIZE dup (?),'$'\n");
+                }
             }
         }        
         
         seccionData.append("    _msgOK            db  0DH,0AH,\"Se ejecuto OK\",'$'\n");
     }
 
-    private void generarSeccionDataCompleta() {
-        codigoAsm.append(".DATA\n\n");
-        codigoAsm.append(seccionData.toString());
-        
-        // Agregar todas las variables temporales que se usaron
+    private void IngresarVariablesAuxiliaresDATA() {
         for (String temp : temporalesDeclaradas) {
-            codigoAsm.append("    ").append(temp).append("         dd  ?\n");
+            seccionData.append("    ").append(temp).append("         dd  ?\n");
         }
+
+        codigoAsm.append(".DATA\n\n");
+        codigoAsm.append(seccionData.toString());       
+    }
+
+    private StringBuilder generarBODY() {
+        //Solo devolvemos el body generado ya que se tienen que
+        //generar las variables temporales para meter en el .DATA        
+        StringBuilder codigoOriginal = codigoAsm;
+        StringBuilder codigoBody = new StringBuilder();
+        codigoAsm = codigoBody;
+        
+        codigoAsm.append("\n.CODE\n\n");
+        codigoAsm.append("PUBLIC START\n");
+        codigoAsm.append("START:\n");
+        codigoAsm.append("    mov AX,@DATA\n");
+        codigoAsm.append("    mov DS,AX\n");
+        codigoAsm.append("    mov es,ax\n");
+        generarCodigo(arbolSintactico);       
+        codigoAsm.append("    displayString _msgOK\n");
+        codigoAsm.append("    newLine 1\n");
+        codigoAsm.append("    mov ax, 4C00h\n");
+        codigoAsm.append("    int 21h\n");
+        codigoAsm.append("\nEND START\n");        
+        
+        // Borrar todo ya que sino se genera dos veces el mismo código 
+        codigoAsm = codigoOriginal;        
+        return codigoBody;
     }
     // </editor-fold>
 
@@ -403,7 +392,7 @@ public class AsmCodeGenerator implements FileGenerator {
         if (nodo.esHoja()) {
             if (valor.matches("-?\\d+")) {
                 // Es un entero literal - necesitamos cargarlo en una variable temporal para operaciones
-                String tempVar = "_temp_lit_" + (contadorTemporales++);
+                String tempVar = "_temp_" + (contadorTemporales++);
                 if (!temporalesDeclaradas.contains(tempVar)) {
                     temporalesDeclaradas.add(tempVar);
                 }
@@ -411,7 +400,7 @@ public class AsmCodeGenerator implements FileGenerator {
                 return tempVar;
             } else if (valor.matches("-?\\d+\\.\\d+")) {
                 // Es un float literal - necesitamos cargarlo en una variable temporal
-                String tempVar = "_temp_lit_" + (contadorTemporales++);
+                String tempVar = "_temp_" + (contadorTemporales++);
                 if (!temporalesDeclaradas.contains(tempVar)) {
                     temporalesDeclaradas.add(tempVar);
                 }
@@ -464,7 +453,7 @@ public class AsmCodeGenerator implements FileGenerator {
     }
 
     private String generarOperacionBinaria(NodoArbol nodo, String operacion, String tipo) {
-        String tempVar = "_temp" + (contadorTemporales++);
+        String tempVar = "_temp_" + (contadorTemporales++);
         
         // Declarar la variable temporal en .DATA
         if (!temporalesDeclaradas.contains(tempVar)) {
@@ -532,7 +521,7 @@ public class AsmCodeGenerator implements FileGenerator {
 
     private String generarEqualExpressions(NodoArbol nodo) {
         // Equal expressions retorna un valor que indica si todas las expresiones son iguales
-        String tempVar = "_temp" + (contadorTemporales++);
+        String tempVar = "_temp_" + (contadorTemporales++);
         
         // Declarar la variable temporal en .DATA
         if (!temporalesDeclaradas.contains(tempVar)) {
@@ -551,7 +540,7 @@ public class AsmCodeGenerator implements FileGenerator {
     }
 
     private String generarIsZero(NodoArbol nodo) {
-        String tempVar = "_temp" + (contadorTemporales++);
+        String tempVar = "_temp_" + (contadorTemporales++);
         
         // Declarar la variable temporal en .DATA
         if (!temporalesDeclaradas.contains(tempVar)) {
@@ -575,7 +564,7 @@ public class AsmCodeGenerator implements FileGenerator {
     // <editor-fold desc="Utilidades">
     private String obtenerTipoVariable(String nombreVar) {
         // Si es una variable temporal, no buscar en tabla de símbolos
-        if (nombreVar.startsWith("_temp") || nombreVar.startsWith("_temp_lit_") || nombreVar.startsWith("_float_lit_")) {
+        if (nombreVar.startsWith("_temp_") || nombreVar.startsWith("_float_lit_")) {
             // Variables temporales son enteros por defecto, a menos que contengan un punto
             if (nombreVar.contains("float")) {
                 return "Float";
@@ -591,42 +580,25 @@ public class AsmCodeGenerator implements FileGenerator {
             return null;
         }
     }
-
-    /**
-     * Obtiene el nombre de una constante string. Si ya existe, devuelve el nombre existente.
-     * Si no existe, lo genera y lo declara en .DATA usando formato CTE_CADENA_ + hash.
-     * 
-     * @param contenido Contenido del string sin comillas
-     * @return Nombre de la constante generada (formato: CTE_CADENA_ + hash)
-     */
-    private String obtenerNombreConstanteString(String contenido) {
-        // Si ya existe, devolver el nombre existente
+    
+    private String agregarVariableDATA(String contenido) {        
         if (constantesString.containsKey(contenido))
-            return constantesString.get(contenido);
+            return constantesString.get(contenido);       
         
-        // Generar nuevo nombre con formato CTE_CADENA_ + hash
         String nombreStr = "CTE_CADENA_" + Math.abs(contenido.hashCode());
-        
-        // Guardar en el mapa para evitar duplicados
         constantesString.put(contenido, nombreStr);
-        
-        // Declarar en .DATA solo una vez
-        if (!stringsGenerados.contains(nombreStr)) {
-            stringsGenerados.add(nombreStr);
-            int longitud = contenido.length();
-            int padding = Math.max(0, 50 - longitud - 2); // 50 es MAXTEXTSIZE, -2 por '$' y espacio
-            seccionData.append("    ").append(nombreStr).append("         db  \"").append(contenido)
-                      .append("\",'$', ").append(padding).append(" dup (?)\n");
-        }
+        int longitud = contenido.length();
+        int padding = Math.max(0, 50 - longitud - 2); 
+        seccionData.append("    ").append(nombreStr).append("         db  \"").append(contenido)
+                  .append("\",'$', ").append(padding).append(" dup (?)\n");
         
         return nombreStr;
     }
 
     private String generarStringLiteral(String valor) {
         // Quitar comillas
-        String contenido = valor.substring(1, valor.length() - 1);
-        // Usar método centralizado
-        return obtenerNombreConstanteString(contenido);
+        String contenido = valor.substring(1, valor.length() - 1);        
+        return agregarVariableDATA(contenido);
     }
     // </editor-fold>
 }
