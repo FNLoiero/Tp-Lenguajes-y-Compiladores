@@ -157,6 +157,34 @@ else
     write("num5 = num1") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
+#+ IF con variables Float +#
+a := 10.5
+b := 5.2
+if (a > b)
+{
+    write("a > b") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+
+d := 3.7
+z := 8.9
+if (z > d)
+{
+    write("z > d") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+else
+{
+    write("z <= d")
+}
+
+if (z < d)
+{
+    write("z > d") 
+}
+else
+{
+    write("ENTRA ELSE FLOAT") #+ Se va a ejecutar en la version actual con los datos actuales +#
+}
+
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
 #+ 1. Error de string, el literal no está cerrado correctamente. +#
 #+ b := "cadena sin cerrar +#
