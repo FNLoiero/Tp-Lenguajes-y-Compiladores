@@ -356,10 +356,15 @@ public class AsmCodeGenerator implements FileGenerator {
             String left = generarExpresion(nodo.getLeft(), "Int");
             String right = generarExpresion(nodo.getRight(), "Int");
 
-            // Verificar si son float
-            String tipo = SymbolTableGenerator.GetTipo(left.replace("_", ""));
-            if (tipo != null && "Float".equals(tipo)) {
+            // Verificar si son float (verificar ambos operandos)
+            String tipoLeft = obtenerTipoVariable(left);
+            String tipoRight = obtenerTipoVariable(right);
+            boolean esFloat = "Float".equals(tipoLeft) || "Float".equals(tipoRight);
+            
+            if (esFloat) {
                 // Comparación de float
+                // fcomp compara st(0) con st(1)
+                // Queremos comparar left con right, entonces necesitamos left en st(0) y right en st(1) después de fxch
                 codigoAsm.append("    fld ").append(left).append("\n");
                 codigoAsm.append("    fld ").append(right).append("\n");
                 codigoAsm.append("    fxch\n");
@@ -367,6 +372,8 @@ public class AsmCodeGenerator implements FileGenerator {
                 codigoAsm.append("    fstsw ax\n");
                 codigoAsm.append("    ffree st(0)\n");
                 codigoAsm.append("    sahf\n");
+                // Después de fcomp, los flags indican: left > right (above), left < right (below), left == right (equal)
+                // Para left > right: si es falso (left <= right), saltar al else
                 if (">".equals(valor))
                     codigoAsm.append("    JBE ").append(etiquetaFalse).append("\n");
                 else
@@ -412,7 +419,7 @@ public class AsmCodeGenerator implements FileGenerator {
                 if (!temporalesDeclaradas.contains(tempVar)) {
                     temporalesDeclaradas.add(tempVar);
                 }
-                // Necesitamos declarar el float literal en .DATA
+                // Declarar el float literal en .DATA
                 String nombreFloat = "_float_lit_" + Math.abs(valor.hashCode());
                 seccionData.append("    ").append(nombreFloat).append("         dd  ").append(valor).append("\n");
                 codigoAsm.append("    fld ").append(nombreFloat).append("\n");

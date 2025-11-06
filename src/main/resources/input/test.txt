@@ -167,22 +167,26 @@ if (a > b)
 
 d := 3.7
 z := 8.9
+
 if (z > d)
 {
     write("z > d") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 else
 {
-    write("z <= d")
+    write("z <= d") 
 }
 
-if (z < d)
+
+z := d - 3
+
+if (z > d)
 {
     write("z > d") 
 }
 else
 {
-    write("ENTRA ELSE FLOAT") #+ Se va a ejecutar en la version actual con los datos actuales +#
+    write("z <= d") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
 
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
