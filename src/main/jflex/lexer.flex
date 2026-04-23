@@ -38,7 +38,7 @@ OP_SUMA = "+"
 OP_MULT = "*"
 OP_RESTA = "-"
 OP_DIV = "/"
-OP_ASIG = ":="
+OP_ASIG = ":="|"="
 COMP_MEN = "<"
 COMP_MAY = ">"
 OP_COMA = ","
@@ -67,6 +67,15 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
 <YYINITIAL> {
   /* keywords */
   "while"           { return symbol(ParserSym.WHILE); }  
+  "FOR"             { return symbol(ParserSym.FOR); }
+  "for"             { return symbol(ParserSym.FOR); }
+  "TO"              { return symbol(ParserSym.TO); }
+  "to"              { return symbol(ParserSym.TO); }
+  "STEP"            { return symbol(ParserSym.STEP); }
+  "step"            { return symbol(ParserSym.STEP); }
+  "Step"            { return symbol(ParserSym.STEP); }
+  "NEXT"            { return symbol(ParserSym.NEXT); }
+  "next"            { return symbol(ParserSym.NEXT); }
   "if"              { return symbol(ParserSym.IF); }
   "else"            { return symbol(ParserSym.ELSE); }  
   "write"           { return symbol(ParserSym.WRITE); }

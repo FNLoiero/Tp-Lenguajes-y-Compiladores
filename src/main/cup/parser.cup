@@ -70,6 +70,10 @@ terminal OP_PUNTOS;
 terminal IF;
 terminal ELSE;
 terminal WHILE;
+terminal FOR;
+terminal TO;
+terminal STEP;
+terminal NEXT;
 terminal AND;
 terminal OR;
 terminal NOT;
@@ -118,6 +122,8 @@ terminal COMENTARIO;
 
     //Especiales
     non terminal instruccion_especial;
+    non terminal for_loop;
+    non terminal step_opcional;
     non terminal parametros_operaciones;
     non terminal operation_equal_expressions;
     non terminal operation_is_zero;
@@ -156,7 +162,8 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
     instruccion_entrada_salida ::= read:readInst {: RESULT = readInst; :} 
                                  | write:writeInst {: RESULT = writeInst; :};
     instruccion_especial ::= operation_equal_expressions:equal {: RESULT = equal; :} 
-                            | operation_is_zero:isZero {: RESULT = isZero; :};
+                            | operation_is_zero:isZero {: RESULT = isZero; :}
+                            | for_loop:forInst {: RESULT = forInst; :};
 
 //Operaciones detalladas
 
@@ -366,3 +373,32 @@ serie_de_instrucciones ::= instruccion:inst {: RESULT = inst; :}
                 RESULT = crearNodo("IS_ZERO", (NodoArbol)expr, null);
                 System.out.println("Se hizo Is Zero");
             :};
+
+    for_loop ::= FOR ID:id OP_ASIG operacion:inicio TO operacion:fin step_opcional:step
+                 serie_de_instrucciones:instrucciones NEXT ID:idNext {: 
+                String tipoVar = lyc.compiler.files.SymbolTableGenerator.GetTipo((String)id);
+                if (tipoVar == null || tipoVar == "") {
+                    throw new RuntimeException("Error: variable de control del FOR '" + id + "' no declarada.");
+                }
+                if (!"Int".equals(tipoVar)) {
+                    throw new RuntimeException("Error: la variable de control del FOR debe ser de tipo Int.");
+                }
+                if (!((String)id).equals((String)idNext)) {
+                    throw new RuntimeException("Error: la variable en NEXT ('" + idNext + "') debe coincidir con la variable de FOR ('" + id + "').");
+                }
+
+                RESULT = crearNodo("FOR",
+                        crearNodo("ControlFOR", crearHoja((String)id),
+                                crearNodo("RangoFOR", (NodoArbol)inicio,
+                                        crearNodo("HastaFOR", (NodoArbol)fin, (NodoArbol)step))),
+                        crearNodo("Cuerpo", (NodoArbol)instrucciones, null));
+                System.out.println("BLOQUE - FOR");
+            :};
+
+    step_opcional ::= STEP CTE_ENTERA:step {: 
+                        if (Integer.parseInt((String)step) == 0) {
+                            throw new RuntimeException("Error: STEP no puede ser 0.");
+                        }
+                        RESULT = crearHoja((String)step);
+                    :}
+                    | {: RESULT = crearHoja("1"); :};

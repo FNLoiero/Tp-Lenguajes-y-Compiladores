@@ -111,6 +111,8 @@ public class AsmCodeGenerator implements FileGenerator {
         codigoAsm = codigoBody;
         
         codigoAsm.append("\n.CODE\n\n");
+        generarRutinasAuxiliares();
+        codigoAsm.append("\n");
         codigoAsm.append("PUBLIC START\n");
         codigoAsm.append("START:\n");
         codigoAsm.append("    mov AX,@DATA\n");
@@ -126,6 +128,45 @@ public class AsmCodeGenerator implements FileGenerator {
         // Borrar todo ya que sino se genera dos veces el mismo código 
         codigoAsm = codigoOriginal;        
         return codigoBody;
+    }
+
+    private void generarRutinasAuxiliares() {
+        codigoAsm.append("PRINT_INT32 PROC\n");
+        codigoAsm.append("    pushad\n");
+        codigoAsm.append("    cmp eax, 0\n");
+        codigoAsm.append("    jne _pi32_not_zero\n");
+        codigoAsm.append("    mov dl, '0'\n");
+        codigoAsm.append("    mov ah, 02h\n");
+        codigoAsm.append("    int 21h\n");
+        codigoAsm.append("    jmp _pi32_done\n");
+        codigoAsm.append("_pi32_not_zero:\n");
+        codigoAsm.append("    cmp eax, 0\n");
+        codigoAsm.append("    jge _pi32_positive\n");
+        codigoAsm.append("    mov dl, '-'\n");
+        codigoAsm.append("    mov ah, 02h\n");
+        codigoAsm.append("    int 21h\n");
+        codigoAsm.append("    neg eax\n");
+        codigoAsm.append("_pi32_positive:\n");
+        codigoAsm.append("    xor ecx, ecx\n");
+        codigoAsm.append("_pi32_div_loop:\n");
+        codigoAsm.append("    xor edx, edx\n");
+        codigoAsm.append("    mov ebx, 10\n");
+        codigoAsm.append("    div ebx\n");
+        codigoAsm.append("    push edx\n");
+        codigoAsm.append("    inc ecx\n");
+        codigoAsm.append("    cmp eax, 0\n");
+        codigoAsm.append("    jne _pi32_div_loop\n");
+        codigoAsm.append("_pi32_print_loop:\n");
+        codigoAsm.append("    pop edx\n");
+        codigoAsm.append("    add dl, '0'\n");
+        codigoAsm.append("    mov ah, 02h\n");
+        codigoAsm.append("    int 21h\n");
+        codigoAsm.append("    dec ecx\n");
+        codigoAsm.append("    jne _pi32_print_loop\n");
+        codigoAsm.append("_pi32_done:\n");
+        codigoAsm.append("    popad\n");
+        codigoAsm.append("    ret\n");
+        codigoAsm.append("PRINT_INT32 ENDP\n");
     }
     // </editor-fold>
 
@@ -168,6 +209,10 @@ public class AsmCodeGenerator implements FileGenerator {
 
             case "WHILE":
                 generarWhile(nodo);
+                break;
+
+            case "FOR":
+                generarFor(nodo);
                 break;
 
             case "+":
@@ -258,8 +303,10 @@ public class AsmCodeGenerator implements FileGenerator {
                 String nombreVar = "_" + valor;
                 String tipoVar = SymbolTableGenerator.GetTipo(valor);
                 
-                if ("Int".equals(tipoVar))
-                    codigoAsm.append("    DisplayInteger ").append(nombreVar).append("\n");
+                if ("Int".equals(tipoVar)) {
+                    codigoAsm.append("    mov eax, ").append(nombreVar).append("\n");
+                    codigoAsm.append("    call PRINT_INT32\n");
+                }
                 else if ("Float".equals(tipoVar))
                     codigoAsm.append("    DisplayFloat ").append(nombreVar).append(", 2\n");
                 else if ("String".equals(tipoVar))
@@ -315,6 +362,57 @@ public class AsmCodeGenerator implements FileGenerator {
         codigoAsm.append("    JMP ET_WHILE_").append(etiquetaInicio).append("\n");
 
         codigoAsm.append("ET_WHILE_END_").append(etiquetaEnd).append(":\n");
+    }
+
+    private void generarFor(NodoArbol nodo) {
+        if (nodo.getLeft() == null || nodo.getRight() == null) return;
+
+        NodoArbol controlFor = nodo.getLeft();
+        if (controlFor.getLeft() == null || controlFor.getRight() == null) return;
+
+        String nombreVariableControl = "_" + controlFor.getLeft().getValor();
+
+        NodoArbol rango = controlFor.getRight();
+        if (rango.getLeft() == null || rango.getRight() == null || rango.getRight().getLeft() == null) return;
+
+        NodoArbol hasta = rango.getRight();
+
+        int paso = (hasta.getRight() != null && hasta.getRight().getValor() != null)
+                ? Integer.parseInt(hasta.getRight().getValor())
+                : 1;
+
+        String inicio = generarExpresion(rango.getLeft(), "Int");
+        codigoAsm.append("    mov eax, ").append(inicio).append("\n");
+        codigoAsm.append("    mov ").append(nombreVariableControl).append(", eax\n");
+
+        int etiquetaInicio = contadorEtiquetas++;
+        int etiquetaBody = contadorEtiquetas++;
+        int etiquetaEnd = contadorEtiquetas++;
+
+        codigoAsm.append("ET_FOR_").append(etiquetaInicio).append(":\n");
+
+        generarCondicion(new NodoArbol(paso > 0 ? ">" : "<",
+                new NodoArbol(controlFor.getLeft().getValor()),
+                hasta.getLeft()),
+                "ET_FOR_END_" + etiquetaEnd,
+                "ET_FOR_BODY_" + etiquetaInicio);
+
+        codigoAsm.append("ET_FOR_BODY_").append(etiquetaInicio).append(":\n");
+
+        generarCodigo(nodo.getRight());
+
+        if (paso == 1)
+            codigoAsm.append("    inc ").append(nombreVariableControl).append("\n");
+        else if (paso == -1)
+            codigoAsm.append("    dec ").append(nombreVariableControl).append("\n");
+        else
+            codigoAsm.append(paso > 0 ? "    add " : "    sub ")
+                    .append(nombreVariableControl)
+                    .append(", ")
+                    .append(Math.abs(paso))
+                    .append("\n");
+        codigoAsm.append("    jmp ET_FOR_").append(etiquetaInicio).append("\n");
+        codigoAsm.append("ET_FOR_END_").append(etiquetaEnd).append(":\n");
     }
 
     private void generarCondicion(NodoArbol nodo, String etiquetaTrue, String etiquetaFalse) {

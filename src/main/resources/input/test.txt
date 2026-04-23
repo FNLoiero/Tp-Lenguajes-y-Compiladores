@@ -1,6 +1,6 @@
 init {
     a, b, d, z, e : Float
-    c1, c2, c3, x, c, s, h, contador, num1, num2, num3, num4, num5, num6, valor1, valor2, valor3 : Int
+    c1, c2, c3, x, c, s, h, contador, num1, num2, num3, num4, num5, num6, num7, valor1, valor2, valor3 : Int
     base, y, mensaje1, mensaje2, mensaje3, mensaje4 : String
 }
 
@@ -11,6 +11,7 @@ num3 := 15
 num4 := 20
 num5 := 3
 num6 := 7
+num7 := 2
 valor1 := 100
 valor2 := 50
 contador := 0
@@ -188,6 +189,23 @@ else
 {
     write("z <= d") #+ Se va a ejecutar en la version actual con los datos actuales +#
 }
+
+#+ FOR +#
+write("FOR sin STEP (default 1)")
+FOR contador = 1 TO 1
+    write(contador)
+NEXT contador
+
+write("FOR con STEP de 2 y con expresion, num1=5, num5=3, num7=2, num3=15")
+FOR contador = (num5 - num7) TO (num3 - num1) STEP 2
+    write(contador)
+NEXT contador
+
+write("FOR con STEP negativo")
+FOR contador = 10 TO 1 STEP -3
+    write(contador)
+NEXT contador
+
 
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
 #+ 1. Error de string, el literal no está cerrado correctamente. +#
