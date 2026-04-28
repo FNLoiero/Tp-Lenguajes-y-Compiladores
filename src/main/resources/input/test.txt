@@ -192,17 +192,14 @@ else
 
 #+ FOR +#
 write("FOR sin STEP (default 1)")
-FOR contador = 1 TO 1
+write("Con solo una pasada")
+FOR contador := 1 TO 1
     write(contador)
 NEXT contador
 
-write("FOR con STEP de 2 y con expresion, num1=5, num5=3, num7=2, num3=15")
-FOR contador = (num5 - num7) TO (num3 - num1) STEP 2
-    write(contador)
-NEXT contador
-
-write("FOR con STEP negativo")
-FOR contador = 10 TO 1 STEP -3
+write("FOR con STEP positivo")
+write("Con expresiones")
+FOR contador := (num2-num1) TO (num4-num2) STEP 2
     write(contador)
 NEXT contador
 
