@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Stack;
 
 import lyc.compiler.model.NodoArbol;
 import lyc.compiler.model.Symbol;
@@ -18,7 +19,23 @@ public class AsmCodeGenerator implements FileGenerator {
     private int contadorEtiquetas;
     private int contadorTemporales;
     private Set<String> temporalesDeclaradas;
-    private HashMap<String, String> constantesString; 
+    private HashMap<String, String> constantesString;
+
+    // Tema especial labeledBreak: pila de ciclos abiertos con sus etiquetas de salto
+    private Stack<CicloAbierto> pilaCiclos;
+    private String etiquetaCicloPendiente; // etiqueta del usuario para el próximo ciclo
+
+    private static class CicloAbierto {
+        final String etiqueta;      // nombre que le dio el usuario (null si no tiene)
+        final String destinoSalto;  // a dónde salta el continue (evaluación de la condición / incremento)
+        final String destinoCorte;  // a dónde salta el break (primera instrucción después del ciclo)
+
+        CicloAbierto(String etiqueta, String destinoSalto, String destinoCorte) {
+            this.etiqueta = etiqueta;
+            this.destinoSalto = destinoSalto;
+            this.destinoCorte = destinoCorte;
+        }
+    }
     // </editor-fold>
 
     // <editor-fold desc="Constructor">
@@ -29,6 +46,8 @@ public class AsmCodeGenerator implements FileGenerator {
         contadorTemporales = 0;
         temporalesDeclaradas = new HashSet<>();
         constantesString = new HashMap<>();
+        pilaCiclos = new Stack<>();
+        etiquetaCicloPendiente = null;
     }
     // </editor-fold>
 
@@ -215,6 +234,20 @@ public class AsmCodeGenerator implements FileGenerator {
                 generarFor(nodo);
                 break;
 
+            case "ETIQUETA":
+                // Ciclo con etiqueta: se guarda el nombre y se genera el ciclo (hijo derecho)
+                etiquetaCicloPendiente = nodo.getLeft().getValor();
+                generarCodigo(nodo.getRight());
+                break;
+
+            case "BREAK":
+                generarCorteOSalto(nodo, true);
+                break;
+
+            case "CONTINUE":
+                generarCorteOSalto(nodo, false);
+                break;
+
             case "+":
             case "-":
             case "*":
@@ -344,6 +377,7 @@ public class AsmCodeGenerator implements FileGenerator {
     }
 
     private void generarWhile(NodoArbol nodo) {
+        String etiquetaUsuario = tomarEtiquetaCicloPendiente();
         if (nodo.getLeft() == null) return;
 
         int etiquetaInicio = contadorEtiquetas++;
@@ -355,16 +389,19 @@ public class AsmCodeGenerator implements FileGenerator {
         NodoArbol condicion = nodo.getLeft().getLeft();
         generarCondicion(condicion, "ET_WHILE_BODY_" + etiquetaInicio, "ET_WHILE_END_" + etiquetaEnd);
 
-        // Código del cuerpo
+        // Código del cuerpo (continue -> vuelve a evaluar la condición, break -> fin del while)
         codigoAsm.append("ET_WHILE_BODY_").append(etiquetaInicio).append(":\n");
+        pilaCiclos.push(new CicloAbierto(etiquetaUsuario, "ET_WHILE_" + etiquetaInicio, "ET_WHILE_END_" + etiquetaEnd));
         if (nodo.getRight() != null && nodo.getRight().getLeft() != null)
             generarCodigo(nodo.getRight().getLeft());
+        pilaCiclos.pop();
         codigoAsm.append("    JMP ET_WHILE_").append(etiquetaInicio).append("\n");
 
         codigoAsm.append("ET_WHILE_END_").append(etiquetaEnd).append(":\n");
     }
 
     private void generarFor(NodoArbol nodo) {
+        String etiquetaUsuario = tomarEtiquetaCicloPendiente();
         if (nodo.getLeft() == null || nodo.getRight() == null) return;
 
         NodoArbol controlFor = nodo.getLeft();
@@ -399,8 +436,12 @@ public class AsmCodeGenerator implements FileGenerator {
 
         codigoAsm.append("ET_FOR_BODY_").append(etiquetaInicio).append(":\n");
 
+        // continue -> va al incremento (y de ahí a la condición), break -> fin del FOR
+        pilaCiclos.push(new CicloAbierto(etiquetaUsuario, "ET_FOR_CONT_" + etiquetaInicio, "ET_FOR_END_" + etiquetaEnd));
         generarCodigo(nodo.getRight());
+        pilaCiclos.pop();
 
+        codigoAsm.append("ET_FOR_CONT_").append(etiquetaInicio).append(":\n");
         if (paso == 1)
             codigoAsm.append("    inc ").append(nombreVariableControl).append("\n");
         else if (paso == -1)
@@ -413,6 +454,35 @@ public class AsmCodeGenerator implements FileGenerator {
                     .append("\n");
         codigoAsm.append("    jmp ET_FOR_").append(etiquetaInicio).append("\n");
         codigoAsm.append("ET_FOR_END_").append(etiquetaEnd).append(":\n");
+    }
+
+    // Tema especial labeledBreak: break (esCorte = true) o continue (esCorte = false)
+    private void generarCorteOSalto(NodoArbol nodo, boolean esCorte) {
+        String etiqueta = nodo.getLeft() != null ? nodo.getLeft().getValor() : null;
+        CicloAbierto ciclo = buscarCiclo(etiqueta);
+        if (ciclo == null)
+            throw new RuntimeException("Error: '" + (esCorte ? "break" : "continue") + "' sin un ciclo destino válido.");
+
+        codigoAsm.append("    JMP ").append(esCorte ? ciclo.destinoCorte : ciclo.destinoSalto)
+                 .append("    ; ").append(esCorte ? "break" : "continue")
+                 .append(etiqueta != null ? " " + etiqueta : "").append("\n");
+    }
+
+    // Sin etiqueta: el ciclo más interno. Con etiqueta: el ciclo abierto más cercano con ese nombre
+    private CicloAbierto buscarCiclo(String etiqueta) {
+        if (pilaCiclos.isEmpty()) return null;
+        if (etiqueta == null) return pilaCiclos.peek();
+        for (int i = pilaCiclos.size() - 1; i >= 0; i--) {
+            if (etiqueta.equals(pilaCiclos.get(i).etiqueta))
+                return pilaCiclos.get(i);
+        }
+        return null;
+    }
+
+    private String tomarEtiquetaCicloPendiente() {
+        String etiqueta = etiquetaCicloPendiente;
+        etiquetaCicloPendiente = null;
+        return etiqueta;
     }
 
     private void generarCondicion(NodoArbol nodo, String etiquetaTrue, String etiquetaFalse) {

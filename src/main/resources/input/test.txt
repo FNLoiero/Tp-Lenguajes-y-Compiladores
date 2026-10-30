@@ -2,6 +2,7 @@ init {
     a, b, d, z, e : Float
     c1, c2, c3, x, c, s, h, contador, num1, num2, num3, num4, num5, num6, num7, valor1, valor2, valor3 : Int
     base, y, mensaje1, mensaje2, mensaje3, mensaje4 : String
+    i, j, k : Int
 }
 
 #+ Inicializacion de variables con valores simples +#
@@ -200,9 +201,138 @@ NEXT contador
 write("FOR con STEP")
 write("Con expresiones")
 FOR contador := (num2-num1) TO (num4-num2) STEP 2
+    write("antes")
+    write(contador)
+    write("despues")
+NEXT contador
+
+
+#+ ==================== TEMA ESPECIAL: labeledBreak ==================== +#
+
+#+ 1. break sin etiqueta en un ciclo simple, dentro de un IF. Imprime: 0 1 2 3 4 +#
+write("break sin etiqueta")
+i := 0
+while (i < 10)
+{
+    if (i > 4)
+    {
+        break
+    }
+    write(i)
+    i := i + 1
+}
+
+#+ 2. continue sin etiqueta: el write no se ejecuta cuando i = 3. Imprime: 1 2 4 5 +#
+write("continue sin etiqueta")
+i := 0
+while (i < 5)
+{
+    i := i + 1
+    if (i > 2 AND i < 4)
+    {
+        continue
+    }
+    write(i)
+}
+
+#+ 3. break con etiqueta: corta los DOS ciclos cuando i*j > 6. Imprime: 2 4 (valores de i y j) +#
+write("break externo")
+i := 0
+j := 0
+externo: while (i < 5)
+{
+    j := 0
+    while (j < 5)
+    {
+        if (i * j > 6)
+        {
+            break externo
+        }
+        j := j + 1
+    }
+    i := i + 1
+}
+write(i)
+write(j)
+
+#+ 4. continue con etiqueta: vuelve a evaluar la condicion del ciclo externo. Imprime: 0 1 0 1 +#
+write("continue externo")
+i := 0
+externo: while (i < 5)
+{
+    j := 0
+    while (j < 5)
+    {
+        i := i + 1
+        if (j > 1)
+        {
+            continue externo
+        }
+        write(j)
+        j := j + 1
+    }
+}
+
+#+ 5. Tres niveles: el break actua sobre el ciclo intermedio. Imprime: 0 fin medio 0 fin medio +#
+write("tres niveles: break medio")
+i := 0
+while (i < 2)
+{
+    j := 0
+    medio: while (j < 3)
+    {
+        k := 0
+        while (k < 3)
+        {
+            if (k > 0)
+            {
+                break medio
+            }
+            write(k)
+            k := k + 1
+        }
+        write("no se tiene que imprimir")
+        j := j + 1
+    }
+    write("fin medio")
+    i := i + 1
+}
+
+#+ 6. break y continue dentro de un FOR: saltea el 2 y corta en el 4. Imprime: 1 3 +#
+write("break y continue en FOR")
+FOR contador := 1 TO 5
+    if (contador > 3)
+    {
+        break
+    }
+    if (contador > 1 AND contador < 3)
+    {
+        continue
+    }
     write(contador)
 NEXT contador
 
+#+ 7. Las etiquetas tienen su propio espacio de nombres: j es variable y etiqueta. Imprime: 0 1 2 +#
+write("etiqueta igual a variable")
+j := 0
+j: while (j < 10)
+{
+    if (j > 2)
+    {
+        break j
+    }
+    write(j)
+    j := j + 1
+}
+
+#+ 8. Codigo inalcanzable: el compilador ADVIERTE que el write despues del break no se ejecuta +#
+i := 0
+while (i < 3)
+{
+    break
+    write("inalcanzable")
+}
+write("fin labeledBreak")
 
 #+ A continuacion la seccion con lineas que generan error de compilacion : +#
 #+ 1. Error de string, el literal no está cerrado correctamente. +#
@@ -240,3 +370,21 @@ NEXT contador
 
 #+ 11: Constante cadena excede los 30 caracteres: c1 es mas grande que c2 y c3 es mas grande que c2 +#
 #+ write("c1 es mas grande que c2 y c3 es mas grande que c2") +#
+
+#+ ---- Errores del tema especial labeledBreak ---- +#
+
+#+ 12. Error semantico: break fuera de todo ciclo +#
+#+ break +#
+
+#+ 13. Error semantico: etiqueta inexistente +#
+#+ while (i < 5) { break noExiste } +#
+
+#+ 14. Error semantico: etiqueta de un ciclo que no contiene a la sentencia +#
+#+ otro: while (i < 5) { i := i + 1 } +#
+#+ while (i < 5) { continue otro } +#
+
+#+ 15. Error semantico: dos ciclos anidados con la misma etiqueta +#
+#+ ext: while (i < 5) { ext: while (j < 5) { break ext } } +#
+
+#+ 16. Error sintactico: una etiqueta solo puede preceder a un ciclo +#
+#+ ext: i := 5 +#
