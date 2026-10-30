@@ -27,6 +27,27 @@ import lyc.compiler.files.SymbolTableGenerator;
   private Symbol symbol(int type, Object value) {
     return new Symbol(type, yyline, yycolumn, value);
   }
+
+  /* Tema especial labeledBreak: palabras que no pueden usarse como etiqueta */
+  private static final java.util.Set<String> PALABRAS_RESERVADAS = java.util.Set.of(
+      "while", "FOR", "TO", "STEP", "NEXT", "if", "else", "write", "read", "init",
+      "AND", "OR", "NOT", "Float", "Int", "String", "equalExpressions", "isZero",
+      "break", "continue");
+
+  /* Arma el token BREAK / CONTINUE. Si viene seguido de una etiqueta en la misma
+     linea, el valor del token es el nombre de la etiqueta; si no, el valor es null */
+  private Symbol corteOSalto(int tipo, int largoPalabra) throws CompilerException {
+      String etiqueta = yytext().substring(largoPalabra).trim();
+      if (PALABRAS_RESERVADAS.contains(etiqueta)) {
+          // No es una etiqueta: se devuelve la palabra siguiente al scanner
+          yypushback(yylength() - largoPalabra);
+          return symbol(tipo);
+      }
+      if (etiqueta.length() > MAX_LENGTH) {
+          throw new InvalidLengthException("Etiqueta demasiado larga (max 30): " + etiqueta);
+      }
+      return symbol(tipo, etiqueta);
+  }
 %}
 
 
@@ -38,7 +59,7 @@ OP_SUMA = "+"
 OP_MULT = "*"
 OP_RESTA = "-"
 OP_DIV = "/"
-OP_ASIG = ":="|"="
+OP_ASIG = ":="
 COMP_MEN = "<"
 COMP_MAY = ">"
 OP_COMA = ","
@@ -61,6 +82,12 @@ CTE_ENTERA = {DIGITO}+ | -{DIGITO}+
 CTE_FLOTANTE = "-"?({DIGITO}+\.{DIGITO}*|\.{DIGITO}+)
 ESPACIO_BLANCO = {LineTerminator} | {Identation}
 
+/* Tema especial labeledBreak: la etiqueta opcional va en la misma linea */
+CORTE = "break"
+SALTO = "continue"
+CORTE_ETIQUETADO = {CORTE}{Identation}+{ID}
+SALTO_ETIQUETADO = {SALTO}{Identation}+{ID}
+
 %%
 
 
@@ -68,14 +95,9 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   /* keywords */
   "while"           { return symbol(ParserSym.WHILE); }  
   "FOR"             { return symbol(ParserSym.FOR); }
-  "for"             { return symbol(ParserSym.FOR); }
   "TO"              { return symbol(ParserSym.TO); }
-  "to"              { return symbol(ParserSym.TO); }
   "STEP"            { return symbol(ParserSym.STEP); }
-  "step"            { return symbol(ParserSym.STEP); }
-  "Step"            { return symbol(ParserSym.STEP); }
   "NEXT"            { return symbol(ParserSym.NEXT); }
-  "next"            { return symbol(ParserSym.NEXT); }
   "if"              { return symbol(ParserSym.IF); }
   "else"            { return symbol(ParserSym.ELSE); }  
   "write"           { return symbol(ParserSym.WRITE); }
@@ -91,6 +113,10 @@ ESPACIO_BLANCO = {LineTerminator} | {Identation}
   /* Temas especiales */
   "equalExpressions"  { return symbol(ParserSym.EQUAL_EXPRESSIONS); }
   "isZero"            { return symbol(ParserSym.IS_ZERO); }
+  {CORTE_ETIQUETADO}  { return corteOSalto(ParserSym.BREAK, 5); }
+  {SALTO_ETIQUETADO}  { return corteOSalto(ParserSym.CONTINUE, 8); }
+  {CORTE}             { return symbol(ParserSym.BREAK); }
+  {SALTO}             { return symbol(ParserSym.CONTINUE); }
 
 
   /* identifiers */
